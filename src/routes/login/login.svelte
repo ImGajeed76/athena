@@ -49,18 +49,21 @@
 
 <form>
     <div class="label mb-6">
-        <input class="input rounded-md hover:shadow-2xl duration-200" type="email" placeholder="Email" bind:value={email}/>
+        <input class="input rounded-md hover:shadow-2xl duration-200" type="email" placeholder="Email"
+               bind:value={email}/>
     </div>
 
     <div class="label mb-6">
-        <input class="input rounded-md hover:shadow-2xl duration-200" type="password" placeholder="Password" bind:value={password}/>
+        <input class="input rounded-md hover:shadow-2xl duration-200" type="password" placeholder="Password"
+               bind:value={password}/>
         <p class="text-sm ml-1">
-            Forgot your password? <a href="/login/passwordReset" class="underline">Reset it here</a>
+            Forgot your password? <a href="/login/password-reset" class="underline">Reset it here</a>
         </p>
     </div>
 
     <div class="mb-14">
-        <button type="submit" class="btn variant-filled-primary w-full rounded-md hover:shadow-2xl duration-200" on:click={login}>
+        <button type="submit" class="btn variant-filled-primary w-full rounded-md hover:shadow-2xl duration-200"
+                on:click={login}>
             Login
         </button>
 
@@ -70,6 +73,7 @@
     </div>
 
     <p class="text-center text-md">
-        Don't have an account? <button class="text-secondary-500" on:click={() => selected.set(0)}>Sign Up Now</button>
+        Don't have an account?
+        <button class="text-secondary-500" on:click={() => selected.set(0)}>Sign Up Now</button>
     </p>
 </form>
