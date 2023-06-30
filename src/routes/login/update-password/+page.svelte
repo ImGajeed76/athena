@@ -69,10 +69,6 @@
             }, 1000);
         }
     }
-
-    onMount(() => {
-        if (!$currentSession) goto("/");
-    })
 </script>
 
 <div class="h-screen grid items-center">
