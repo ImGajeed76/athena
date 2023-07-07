@@ -2,13 +2,12 @@
     import {onMount} from "svelte";
     import {writable} from "svelte/store";
 
-    export let content = writable("");
+    export let content = writable({});
     let container: HTMLDivElement;
-    let editor;
 
     onMount(() => {
         import("quill").then(({default: Quill}) => {
-            editor = new Quill(container, {
+            let editor = new Quill(container, {
                 modules: {
                     toolbar: [
                         [{ header: [1, 2, false] }],
@@ -19,6 +18,8 @@
                 theme: 'snow'
             });
 
+            if (!editor) return;
+
             editor.on("text-change", () => {
                 if (!container) return;
 
@@ -27,10 +28,12 @@
 
                 content.set(editor.getContents());
             });
+
+            editor.setContents($content);
         })
     })
 </script>
 
-<div class="w-full h-full bg-white text-black prose">
-    <div class="w-full h-full bg-white" bind:this={container}></div>
+<div class="w-full h-full bg-surface-100 prose">
+    <div class="w-full h-full bg-surface-200" bind:this={container}></div>
 </div>

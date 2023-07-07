@@ -1,15 +1,15 @@
 <script>
-    import {supabase} from "$lib/database.ts";
+    import {currentSession, signOut} from "$lib/database.ts";
     import LaTeX_Editor from "../modules/LaTeX_Editor.svelte";
     import {writable} from "svelte/store";
     import LaTeX_Viewer from "../modules/LaTeX_Viewer.svelte";
 
     async function logout() {
-        const {error} = await supabase.auth.signOut();
-        if (error) console.log('Error logging out:', error.message);
+        await signOut();
+        console.log($currentSession);
     }
 
-    let content = writable("");
+    let content = writable({});
 </script>
 
 <!-- YOU CAN DELETE EVERYTHING IN THIS PAGE -->
@@ -27,6 +27,10 @@
         <button class="btn variant-filled-primary" on:click={logout}>
             LogOut
         </button>
+
+        <a class="btn variant-filled-primary" href="/classes">
+            Classes
+        </a>
 
         <div class="h-96 pb-20">
             <LaTeX_Editor content={content}/>

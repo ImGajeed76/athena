@@ -2,17 +2,18 @@
     import {onMount} from "svelte";
     import {writable} from "svelte/store";
 
-    export let content = writable("");
+    export let content = writable({});
     let container: HTMLDivElement;
-    let editor;
 
     onMount(() => {
         import("quill").then(({default: Quill}) => {
-            editor = new Quill(container, {
+            let editor = new Quill(container, {
                 modules: {},
                 placeholder: 'Nothing to see here... ¯\\_(ツ)_/¯',
                 theme: 'bubble'
             });
+
+            if (!editor) return;
 
             editor.on("text-change", () => {
                 if (!container) return;
@@ -22,16 +23,16 @@
 
             editor.setContents($content);
             editor.enable(false);
+
+            content.subscribe(value => {
+                if (editor) editor.setContents(value);
+            });
         });
     });
 
-    content.subscribe(value => {
-        if (editor) {
-            editor.setContents(value);
-        }
-    });
+
 </script>
 
-<div class="w-full h-full bg-white text-black prose">
-    <div class="w-full h-full bg-white" bind:this={container}></div>
+<div class="w-full h-full bg-transparent prose">
+    <div class="w-full h-full bg-surface-200 rounded" bind:this={container}></div>
 </div>

@@ -6,10 +6,14 @@ import {writable} from "svelte/store";
 
 export const supabase = createClient(
     env.PUBLIC_SUPABASE_URL,
-    env.PUBLIC_SUPABASE_KEY
+    env.PUBLIC_SUPABASE_KEY,
 );
 
 export const currentSession: Writable<Session | null> = writable(null);
+let subscribedCurrentSession: Session | null = null;
+currentSession.subscribe((session) => {
+    subscribedCurrentSession = session
+});
 export const currentUserData: Writable<any | null> = writable(null);
 supabase.auth.onAuthStateChange(async (_, session) => {
     currentSession.set(session);
@@ -55,4 +59,46 @@ export async function createUser(email: string, password: string): Promise<{ dat
     if (signUpError) return {data: null, error: signUpError};
 
     return {data: signUpData, error: null};
+}
+
+export async function getClasses() {
+    if (!subscribedCurrentSession) return;
+    console.log(subscribedCurrentSession);
+
+    const {data, error} = await supabase
+        .from("classes")
+        .select();
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    return data;
+}
+
+export async function createClass(name: string, description: string) {
+    if (!subscribedCurrentSession) return;
+    console.log(name, description, subscribedCurrentSession.user.email)
+
+    const {data, error} = await supabase
+        .from("classes")
+        .insert({
+            admins: [subscribedCurrentSession.user.email],
+            users: [subscribedCurrentSession.user.email],
+            name,
+            description,
+        })
+        .select()
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    console.log(data);
+}
+
+export async function signOut() {
+    return await supabase.auth.signOut();
 }
