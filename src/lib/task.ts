@@ -28,22 +28,22 @@ export type TaskAnswer = {
 }
 
 export type TaskExtra = {
-    type: 'Image',
+    type: 'image',
     src: string,
 } | {
-    type: 'Video',
+    type: 'video',
     src: string,
 } | {
-    type: 'Audio',
+    type: 'audio',
     src: string,
 } | {
-    type: 'Simulation',
+    type: 'simulation',
 }
 
 export type TaskExplanation = {
     steps: {
         title: string,
-        content: string,
+        content: any,
         extra: TaskExtra,
     }[]
 }
@@ -68,7 +68,7 @@ export const createEmptyTask = (): Task => ({
         ai_correct: true,
     },
     extra: {
-        type: 'Image',
+        type: 'image',
         src: '',
     },
     explanation: {
