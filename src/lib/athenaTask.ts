@@ -1,4 +1,4 @@
-export type TaskAnswer = {
+export type AthenaTaskAnswer = {
     type: 'text',
     text: string,
     correct_text: string,
@@ -27,7 +27,7 @@ export type TaskAnswer = {
     }[],
 }
 
-export type TaskExtra = {
+export type AthenaTaskExtra = {
     type: 'image',
     src: string,
 } | {
@@ -40,24 +40,26 @@ export type TaskExtra = {
     type: 'simulation',
 }
 
-export type TaskExplanation = {
+export type AthenaTaskExplanation = {
     steps: {
         title: string,
         content: any,
-        extra: TaskExtra,
+        extra: AthenaTaskExtra,
     }[]
 }
 
-export type Task = {
+export type AthenaTask = {
+    structVersion: number,
     uuid: string,
     title: string,
     content: any,
-    answer: TaskAnswer,
-    extra: TaskExtra,
-    explanation: TaskExplanation,
+    answer: AthenaTaskAnswer,
+    extra: AthenaTaskExtra,
+    explanation: AthenaTaskExplanation,
 }
 
-export const createEmptyTask = (): Task => ({
+export const createEmptyTask = (): AthenaTask => ({
+    structVersion: 1,
     uuid: '',
     title: '',
     content: {},
@@ -75,3 +77,17 @@ export const createEmptyTask = (): Task => ({
         steps: [],
     }
 });
+
+export const parseTask = (text: string): AthenaTask => {
+    const JSONData = JSON.parse(text);
+    if (JSONData.structVersion === undefined) {
+        JSONData.structVersion = 1;
+    }
+
+    switch (JSONData.structVersion) {
+        case 1:
+            return JSONData as AthenaTask;
+        default:
+            throw new Error(`Unknown task struct version: ${JSONData.structVersion}`);
+    }
+}

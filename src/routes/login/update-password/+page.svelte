@@ -71,7 +71,7 @@
     }
 </script>
 
-<div class="h-screen grid items-center">
+<div class="h-full grid items-center">
     <div>
         <div class="card max-w-2xl w-full p-3 px-8 m-auto">
             <div class="mb-10 mt-4">

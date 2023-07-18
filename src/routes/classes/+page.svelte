@@ -1,12 +1,28 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {createClass, getClasses} from "$lib/database";
+    import {athenaClasses, createClass} from "$lib/database";
+    import ClassPreview from "./ClassPreview.svelte";
+    import {ProgressRadial} from "@skeletonlabs/skeleton";
 
-    onMount(async () => {
-        setTimeout( async () => {
-            console.log(await getClasses())
-        }, 1000)
-    })
+    let loading = false;
 </script>
 
-<button class="btn variant-filled-primary" on:click={() => {createClass("Test", "Some test class")}}>Create Class</button>
+<div class="p-5 w-full h-full">
+    {#if !loading}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full max-w-6xl m-auto">
+            {#each $athenaClasses as athenaClass}
+                <ClassPreview title={athenaClass.name} description={athenaClass.description} image={athenaClass.banner}
+                              uuid={athenaClass.uuid}/>
+            {/each}
+        </div>
+
+        <div class="w-full flex justify-around mt-5">
+            <button class="btn variant-filled-primary" on:click={() => {createClass("Test", "Some test class")}}>Create
+                Class
+            </button>
+        </div>
+    {:else}
+        <div class="w-full h-full grid items-center">
+            <ProgressRadial class="m-auto" size="large" color="primary"/>
+        </div>
+    {/if}
+</div>

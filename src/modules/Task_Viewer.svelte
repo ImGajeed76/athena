@@ -1,8 +1,8 @@
 <script lang="ts">
     import type {Writable} from "svelte/store";
     import {writable} from "svelte/store";
-    import type {Task} from "$lib/task";
-    import {createEmptyTask} from "$lib/task";
+    import type {AthenaTask} from "$lib/athenaTask";
+    import {createEmptyTask} from "$lib/athenaTask";
     import LaTeX_Viewer from "./LaTeX_Viewer.svelte";
     import VideoPlayer from "./players/VideoPlayer.svelte";
     import AudioPlayer from "./players/AudioPlayer.svelte";
@@ -11,7 +11,7 @@
     import {PUBLIC_BACKEND_KEY} from "$env/static/public";
     import LaTeX_Editor from "./LaTeX_Editor.svelte";
 
-    export let task: Writable<Task> = writable(createEmptyTask());
+    export let task: Writable<AthenaTask> = writable(createEmptyTask());
     let oldTask: string = JSON.stringify($task);
 
     let content = writable($task.content);

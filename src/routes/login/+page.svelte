@@ -32,7 +32,7 @@
     })
 </script>
 
-<div class="absolute w-[50%] h-full bg-surface-800 shadow-xl z-10"
+<div class="fixed w-[50%] h-full bg-surface-800 shadow-xl z-10"
      style="transition: transform 0.3s ease-in-out; transform: translateX(100%);"
      bind:this={slider}>
     <div class="h-full grid items-center">

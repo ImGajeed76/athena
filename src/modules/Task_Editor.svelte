@@ -1,7 +1,7 @@
 <script lang="ts">
     import type {Writable} from "svelte/store";
-    import type {Task} from "$lib/task";
-    import {createEmptyTask} from "$lib/task";
+    import type {AthenaTask} from "$lib/athenaTask";
+    import {createEmptyTask, parseTask} from "$lib/athenaTask";
     import {writable} from "svelte/store";
     import LaTeX_Editor from "./LaTeX_Editor.svelte";
     import {SlideToggle, Step, Stepper, Toast, toastStore} from "@skeletonlabs/skeleton";
@@ -15,7 +15,7 @@
     let optionName = '';
     let optionCorrectValue = false;
 
-    export let task: Writable<Task> = writable(createEmptyTask());
+    export let task: Writable<AthenaTask> = writable(createEmptyTask());
     let oldTask: string = JSON.stringify($task);
 
     let content = writable($task.content);
@@ -194,7 +194,7 @@
             reader.onload = readerEvent => {
                 const fileContent = readerEvent.target.result;
                 if (typeof fileContent === "string") {
-                    $task = JSON.parse(fileContent);
+                    $task = parseTask(fileContent);
                 }
                 task.set($task);
                 content.set($task.content);

@@ -3,6 +3,7 @@ import {createClient} from "@supabase/supabase-js";
 import {env} from "$env/dynamic/public";
 import type {Writable} from "svelte/store";
 import {writable} from "svelte/store";
+import type {AthenaClass} from "$lib/athenaClass";
 
 export const supabase = createClient(
     env.PUBLIC_SUPABASE_URL,
@@ -10,9 +11,9 @@ export const supabase = createClient(
 );
 
 export const currentSession: Writable<Session | null> = writable(null);
-let subscribedCurrentSession: Session | null = null;
+let $currentSession: Session | null = null;
 currentSession.subscribe((session) => {
-    subscribedCurrentSession = session
+    $currentSession = session
 });
 export const currentUserData: Writable<any | null> = writable(null);
 supabase.auth.onAuthStateChange(async (_, session) => {
@@ -45,6 +46,10 @@ supabase.auth.onAuthStateChange(async (_, session) => {
     }
 
     currentUserData.set(data);
+
+    const classes = await getClasses(session);
+    console.log(classes);
+    athenaClasses.set(classes);
 });
 
 
@@ -61,9 +66,16 @@ export async function createUser(email: string, password: string): Promise<{ dat
     return {data: signUpData, error: null};
 }
 
-export async function getClasses() {
-    if (!subscribedCurrentSession) return;
-    console.log(subscribedCurrentSession);
+export const athenaClasses = writable<AthenaClass[]>([]);
+let $athenaClasses: AthenaClass[] = [];
+athenaClasses.subscribe((classes) => {
+    $athenaClasses = classes;
+});
+
+export async function getClasses(session: Session | null): Promise<AthenaClass[]> {
+    if (!session && $currentSession) session = $currentSession;
+    if (!session) return [];
+    console.log(session);
 
     const {data, error} = await supabase
         .from("classes")
@@ -71,23 +83,61 @@ export async function getClasses() {
 
     if (error) {
         console.error(error);
-        return;
+        return [];
     }
 
-    return data;
+    return data as AthenaClass[];
+}
+
+export async function updateClass(classData: AthenaClass) {
+    if (!$currentSession) return false;
+    if (!$currentSession.user.email) return false;
+
+    const {error} = await supabase
+        .from("classes")
+        .update({
+            admins: classData.admins,
+            users: classData.users,
+            name: classData.name,
+            description: classData.description,
+            banner: classData.banner,
+            subjects: classData.subjects,
+        })
+        .eq("uuid", classData.uuid)
+
+    if (error) {
+        console.error(error);
+        return false;
+    }
+
+    athenaClasses.set(await getClasses(null));
+    return true;
 }
 
 export async function createClass(name: string, description: string) {
-    if (!subscribedCurrentSession) return;
-    console.log(name, description, subscribedCurrentSession.user.email)
+    if (!$currentSession) return;
+    if (!$currentSession.user.email) return;
+    console.log(name, description, $currentSession.user.email)
+
+    const classData: AthenaClass = {
+        uuid: "",
+        name,
+        description,
+        admins: [$currentSession.user.email],
+        users: [$currentSession.user.email],
+        banner: "",
+        subjects: [],
+    }
 
     const {data, error} = await supabase
         .from("classes")
         .insert({
-            admins: [subscribedCurrentSession.user.email],
-            users: [subscribedCurrentSession.user.email],
-            name,
-            description,
+            admins: classData.admins,
+            users: classData.users,
+            name: classData.name,
+            description: classData.description,
+            banner: classData.banner,
+            subjects: classData.subjects,
         })
         .select()
 

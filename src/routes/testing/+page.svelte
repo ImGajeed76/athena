@@ -3,13 +3,13 @@
     import {LightSwitch, Tab, TabGroup} from "@skeletonlabs/skeleton";
     import Task_Viewer from "../../modules/Task_Viewer.svelte";
     import type {Writable} from "svelte/store";
-    import type {Task} from "$lib/task";
+    import type {AthenaTask} from "$lib/athenaTask";
     import {writable} from "svelte/store";
-    import {createEmptyTask} from "$lib/task";
+    import {createEmptyTask} from "$lib/athenaTask";
 
     let tabSet = 0;
 
-    let task: Writable<Task> = writable(createEmptyTask());
+    let task: Writable<AthenaTask> = writable(createEmptyTask());
 </script>
 
 <div class="h-full w-full px-20 pt-10 pb-20">
