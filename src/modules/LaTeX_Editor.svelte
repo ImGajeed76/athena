@@ -30,6 +30,15 @@
                 content.set(editor.getContents());
             });
 
+            editor.on("editor-change", () => {
+                if (!container) return;
+
+                const element = container.getElementsByClassName("ql-tooltip ql-editing")[0];
+                if (element && element.style.left.split("px")[0] < 0) {
+                    element.style.left = "0px";
+                }
+            });
+
             editor.setContents($content);
 
             reload.subscribe((value) => {

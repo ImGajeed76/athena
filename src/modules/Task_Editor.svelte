@@ -224,10 +224,10 @@
     <div class="card w-full max-w-6xl h-full m-auto">
         <div class="grid grid-cols-2 w-full h-full p-5 space-x-5">
             <div class="grid grid-rows-[1fr_auto] h-full overflow-y-auto">
-                <div class="h-full overflow-auto rounded">
+                <div class="h-full overflow-y-auto rounded">
                     <input class="input variant-form-material outline-0 text-4xl p-2" placeholder="Title"
                            bind:value={$task.title}>
-                    <div class="mt-5 h-60">
+                    <div class="mt-5 h-60 w-full">
                         <LaTeX_Editor content={content} reload={reloadContent}/>
                     </div>
                     <label class="label mt-14 mb-5">
