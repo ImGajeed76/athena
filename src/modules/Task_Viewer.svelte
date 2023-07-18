@@ -4,8 +4,8 @@
     import type {Task} from "$lib/task";
     import {createEmptyTask} from "$lib/task";
     import LaTeX_Viewer from "./LaTeX_Viewer.svelte";
-    import VideoPlayer from "./VideoPlayer.svelte";
-    import AudioPlayer from "./AudioPlayer.svelte";
+    import VideoPlayer from "./players/VideoPlayer.svelte";
+    import AudioPlayer from "./players/AudioPlayer.svelte";
 
     export let task: Writable<Task> = writable(createEmptyTask());
     let oldTask: string = JSON.stringify($task);

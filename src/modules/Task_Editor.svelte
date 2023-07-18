@@ -5,8 +5,8 @@
     import {writable} from "svelte/store";
     import LaTeX_Editor from "./LaTeX_Editor.svelte";
     import {SlideToggle, Step, Stepper, Toast, toastStore} from "@skeletonlabs/skeleton";
-    import VideoPlayer from "./VideoPlayer.svelte";
-    import AudioPlayer from "./AudioPlayer.svelte";
+    import VideoPlayer from "./players/VideoPlayer.svelte";
+    import AudioPlayer from "./players/AudioPlayer.svelte";
 
     let variableName = '';
     let variableCorrectValue = '';
