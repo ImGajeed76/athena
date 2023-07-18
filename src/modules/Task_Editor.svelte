@@ -7,6 +7,7 @@
     import {SlideToggle, Step, Stepper, Toast, toastStore} from "@skeletonlabs/skeleton";
     import VideoPlayer from "./players/VideoPlayer.svelte";
     import AudioPlayer from "./players/AudioPlayer.svelte";
+    import {onMount} from "svelte";
 
     let variableName = '';
     let variableCorrectValue = '';
@@ -18,6 +19,7 @@
     let oldTask: string = JSON.stringify($task);
 
     let content = writable($task.content);
+    let reloadContent = writable(false);
     content.subscribe(value => {
         $task.content = value;
     });
@@ -110,6 +112,23 @@
 
     let stepContents: Writable<any>[] = [];
 
+    function updateWritable() {
+        $task.explanation.steps.forEach(step => {
+            const content = writable(step.content);
+            content.subscribe(value => {
+                step.content = value;
+                console.log(step.content);
+            })
+            stepContents.push(content);
+        })
+
+        stepContents = [...stepContents];
+    }
+
+    onMount(() => {
+        updateWritable();
+    })
+
     function addExplanation() {
         $task.explanation.steps.push({
             title: `Step ${$task.explanation.steps.length + 1}`,
@@ -120,11 +139,13 @@
             }
         })
 
-        stepContents.push(writable({}));
-
-        stepContents[stepContents.length - 1].subscribe(value => {
-            $task.explanation.steps[stepContents.length - 1].content = value;
+        const content = writable($task.explanation.steps[$task.explanation.steps.length - 1].content);
+        content.subscribe(value => {
+            $task.explanation.steps[$task.explanation.steps.length - 1].content = value;
+            console.log($task.explanation.steps[$task.explanation.steps.length - 1].content);
         })
+
+        stepContents.push(content);
 
         oldTask = JSON.stringify($task);
         task.set($task);
@@ -143,11 +164,63 @@
         oldTask = JSON.stringify($task);
         task.set($task);
     }
+
+    function getURL(src) {
+        return `url(${src})`;
+    }
+
+    function download(filename: string, text: string) {
+        let element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    }
+
+    async function upload() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = e => {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.readAsText(file, "UTF-8");
+            reader.onload = readerEvent => {
+                const fileContent = readerEvent.target.result;
+                if (typeof fileContent === "string") {
+                    $task = JSON.parse(fileContent);
+                }
+                task.set($task);
+                content.set($task.content);
+                reloadContent.set(true);
+                updateWritable();
+            }
+        }
+        input.click();
+    }
+
+    async function exportTask() {
+        let filename = ($task.title.replace(/ /g, '_').toLowerCase() || "some_task") + '.athena';
+        download(filename, JSON.stringify($task));
+    }
+
+    async function importTask() {
+        await upload();
+    }
 </script>
 
 <Toast/>
 
 <div class="p-5 w-full">
+    <div class="mb-1 w-full max-w-6xl m-auto">
+        <button class="text-surface-400 px-1 hover:underline duration-200" on:click={importTask}>Import</button>
+        <button class="text-surface-400 px-1 hover:underline duration-200" on:click={exportTask}>Export</button>
+    </div>
     <div class="card w-full max-w-6xl h-full m-auto">
         <div class="grid grid-cols-2 w-full h-full p-5 space-x-5">
             <div class="grid grid-rows-[1fr_auto] h-full overflow-y-auto">
@@ -155,7 +228,7 @@
                     <input class="input variant-form-material outline-0 text-4xl p-2" placeholder="Title"
                            bind:value={$task.title}>
                     <div class="mt-5 h-60">
-                        <LaTeX_Editor content={content}/>
+                        <LaTeX_Editor content={content} reload={reloadContent}/>
                     </div>
                     <label class="label mt-14 mb-5">
                         <span>Answer Type</span>
@@ -268,7 +341,7 @@
                                bind:value={$task.extra.src}>
 
                         <img class="rounded mt-2" src={$task.extra.src || "robert-shunev-mS1nlYbq1kA-unsplash.jpg"}
-                             alt="image">
+                             alt="reference">
                     </div>
                 {:else if $task.extra.type === "video"}
                     <div>
@@ -332,8 +405,8 @@
                                                    placeholder="Image URL"
                                                    bind:value={step.extra.src}>
 
-                                            <div class="bg-cover rounded bg-center w-full h-72 mt-5"
-                                                 style="background-image: url({step.extra.src || 'robert-shunev-mS1nlYbq1kA-unsplash.jpg'})">
+                                            <div class="bg-cover rounded bg-center w-full h-80 mt-3"
+                                                 style="background-image: {getURL(step.extra.src || 'robert-shunev-mS1nlYbq1kA-unsplash.jpg')}">
                                             </div>
 
 
@@ -344,7 +417,7 @@
                                                    placeholder="Video URL"
                                                    bind:value={step.extra.src}>
 
-                                            <div class="w-full h-72 mt-5 rounded overflow-hidden">
+                                            <div class="w-full h-80 mt-3 rounded overflow-hidden">
                                                 <VideoPlayer
                                                         src={step.extra.src || "pexels-akari-m-5927778 (1080p).mp4"}
                                                         alt="Your Video"/>
@@ -356,7 +429,7 @@
                                                    placeholder="Audio URL"
                                                    bind:value={step.extra.src}>
 
-                                            <div class="w-full h-72 mt-5 rounded overflow-hidden">
+                                            <div class="w-full h-80 mt-3 rounded overflow-hidden">
                                                 <AudioPlayer src={step.extra.src || "spirit-blossom-15285.mp3"}
                                                              alt="Your Audio"/>
                                             </div>

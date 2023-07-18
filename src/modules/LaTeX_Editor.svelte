@@ -3,6 +3,7 @@
     import {writable} from "svelte/store";
 
     export let content = writable({});
+    export let reload = writable(false);
     let container: HTMLDivElement;
 
     onMount(() => {
@@ -30,6 +31,13 @@
             });
 
             editor.setContents($content);
+
+            reload.subscribe((value) => {
+                if (value) {
+                    editor.setContents($content);
+                    reload.set(false);
+                }
+            })
         })
     })
 </script>

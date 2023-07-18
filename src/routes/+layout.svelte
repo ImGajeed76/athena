@@ -17,7 +17,4 @@
     })
 </script>
 
-<div class="absolute">
-    <LightSwitch/>
-</div>
 <slot/>
