@@ -185,6 +185,7 @@
     async function upload() {
         const input = document.createElement('input');
         input.type = 'file';
+        input.accept = '.athena';
         input.onchange = e => {
             if (!e.target.files || e.target.files.length === 0) return;
             const file = e.target.files[0];
