@@ -34,7 +34,7 @@ export const POST = async ({ request }) => {
     console.log(body);
 
     const messages = [
-        {role: "system", content: "Is the users answer correct? Respond with a code-block including true or false.\n" +
+        {role: "system", content: "Is the users answer correct? As long as the meaning of the users answer and the correct answer match its good. Lets say, when at least 75% is right its good. Respond with a code-block including true or false.\n" +
                 "Correct Answer:```" + body.correct_text + "```" +
                 "Users Answer:```" + body.text + "```"}
     ]
