@@ -45,6 +45,12 @@
                         $athenaClass.subjects.push({name: r, description: "", tasks: []});
 
                         await updateClass($athenaClass);
+                    } else {
+                        toastStore.trigger({
+                            message: "Subject already exists!",
+                            timeout: 2000,
+                            background: "variant-filled-error"
+                        })
                     }
                 }
             }
@@ -54,8 +60,6 @@
     }
 </script>
 
-<Modal/>
-<Toast/>
 
 {#if $athenaClass}
     <div class="h-full grid grid-rows-[auto_1fr]">
@@ -157,7 +161,7 @@
                             <div class="card w-full h-fit mt-5 p-5">
                                 {#if $athenaClass.subjects[currentTile - 1].tasks.length > 0}
                                     {#each $athenaClass.subjects[currentTile - 1].tasks as task}
-                                        <TaskPreview originalTask={task} isAdmin={isAdmin}/>
+                                        <TaskPreview originalTask={task} isAdmin={isAdmin} subject={encodeURIComponent($athenaClass.subjects[currentTile - 1].name)}/>
                                     {/each}
                                 {:else}
                                     <p class="text-center">no tasks to display</p>

@@ -4,6 +4,8 @@ import {env} from "$env/dynamic/public";
 import type {Writable} from "svelte/store";
 import {writable} from "svelte/store";
 import type {AthenaClass} from "$lib/athenaClass";
+import type {AthenaTaskProgress} from "$lib/athenaTask";
+import {createEmptyTaskProgress} from "$lib/athenaTask";
 
 export const supabase = createClient(
     env.PUBLIC_SUPABASE_URL,
@@ -151,4 +153,59 @@ export async function createClass(name: string, description: string) {
 
 export async function signOut() {
     return await supabase.auth.signOut();
+}
+
+export async function getTaskProgress(taskUuid: string): Promise<AthenaTaskProgress | null> {
+    if (!$currentSession) return null;
+    if (!$currentSession.user.email) return null;
+
+    const {data, error} = await supabase
+        .from("task_progress")
+        .select()
+        .eq("task_uuid", taskUuid)
+
+    if (error) {
+        console.error(error);
+        return null;
+    }
+
+    if (data.length === 0) {
+        const {data: newData, error: newError} = await supabase
+            .from("task_progress")
+            .insert({
+                task_uuid: taskUuid,
+                email: $currentSession.user.email,
+                progress: createEmptyTaskProgress(taskUuid),
+            })
+            .select()
+
+        if (newError) {
+            console.error(newError);
+            return null;
+        }
+
+        return newData[0].progress;
+    }
+
+    return data[0].progress;
+}
+
+export async function updateTaskProgress(taskUuid: string, progress: AthenaTaskProgress): Promise<AthenaTaskProgress | null> {
+    if (!$currentSession) return null;
+    if (!$currentSession.user.email) return null;
+
+    const {data, error} = await supabase
+        .from("task_progress")
+        .update({
+            progress,
+        })
+        .eq("task_uuid", taskUuid)
+        .select();
+
+    if (error) {
+        console.error(error);
+        return null;
+    }
+
+    return data[0].progress;
 }

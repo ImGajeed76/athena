@@ -7,11 +7,10 @@
     import VideoPlayer from "./players/VideoPlayer.svelte";
     import AudioPlayer from "./players/AudioPlayer.svelte";
     import {Step, Stepper} from "@skeletonlabs/skeleton";
-    import {page} from "$app/stores";
     import {PUBLIC_BACKEND_KEY} from "$env/static/public";
-    import LaTeX_Editor from "./LaTeX_Editor.svelte";
 
     export let task: Writable<AthenaTask> = writable(createEmptyTask());
+    export let onComplete: (allCorrect: boolean) => void = () => {return};
     let oldTask: string = JSON.stringify($task);
 
     let content = writable($task.content);
@@ -36,6 +35,8 @@
     let answersCorrected = false;
     let textAnswerCorrect = false;
 
+    let allCorrect = false;
+
     async function correctAnswers() {
         if ($task.answer.type === 'text') {
             if ($task.answer.ai_correct) {
@@ -55,6 +56,32 @@
             } else {
                 textAnswerCorrect = $task.answer.text.toLowerCase().trim() === $task.answer.correct_text.toLowerCase().trim();
             }
+
+            allCorrect = textAnswerCorrect;
+        }
+
+        if ($task.answer.type === 'variables') {
+            if ($task.answer.variables) {
+                allCorrect = true;
+                for (let i = 0; i < $task.answer.variables.length; i++) {
+                    const variable = $task.answer.variables[i];
+                    if (variable.value.toLowerCase().trim() !== variable.correct_value.toLowerCase().trim()) {
+                        allCorrect = false;
+                    }
+                }
+            }
+        }
+
+        if ($task.answer.type === 'multiple_choice') {
+            if ($task.answer.options) {
+                allCorrect = true;
+                for (let i = 0; i < $task.answer.options.length; i++) {
+                    const option = $task.answer.options[i];
+                    if (option.selected !== option.correct) {
+                        allCorrect = false;
+                    }
+                }
+            }
         }
 
         answersCorrected = true;
@@ -65,8 +92,8 @@
     }
 
     const completionMessages = [
-        "Way to go! You nailed that task. Keep up the good work.",
-        "You're on fire! Another task bites the dust. You're making amazing progress!",
+        "Way to go! You nailed that [subject]. Keep up the good work.",
+        "You're on fire! Another [subject] bites the dust. You're making amazing progress!",
         "Boom! Task conquered. Keep up the momentum. Can't wait to see what you tackle next!",
         "You crushed it! Can't wait to see what you conquer next. Onwards and upwards!",
         "Another one down! You're making progress. Stay motivated, you're doing great!",
@@ -88,7 +115,7 @@
 <div class="card w-full max-w-6xl h-fit m-auto p-5">
     <Stepper class="h-full grid grid-rows-[auto_1fr] {$currentStep === 0 ? 'space-y-0 overflow-y-auto' : 'space-y-4'}"
              regionContent="h-fit m-0 p-0 space-y-0"
-             regionHeader="h-fit" stepTerm="" on:step={onStep}>
+             regionHeader="h-fit" stepTerm="" on:step={onStep} on:complete={() => onComplete(allCorrect)}>
         <Step class="space-y-1 h-fit grid grid-rows-[auto_1fr_auto]" regionContent="h-fit space-y-0"
               locked={!answersCorrected}>
             <svelte:fragment slot="header">
@@ -107,7 +134,7 @@
                                 <textarea
                                         class="textarea h-60 {answersCorrected ? (textAnswerCorrect ? 'variant-glass-success' : 'variant-glass-error') : ''}"
                                         placeholder="Enter your {$task.answer.ai_correct ? '' : 'exact '}answer"
-                                        style="resize: none" bind:value={$task.answer.text}></textarea>
+                                        style="resize: none" bind:value={$task.answer.text} on:input={() => {answersCorrected = false}}></textarea>
                             </div>
                         {:else if $task.answer.type === 'variables'}
                             <div class="max-h-96 overflow-y-auto p-1 rounded">
@@ -117,7 +144,7 @@
                                             <div class="input-group-shim w-24">{variable.name}</div>
                                             <input class="pl-2 outline-0 {answersCorrected ? (variable.value.toLowerCase().trim() === variable.correct_value.toLowerCase().trim() ? 'variant-glass-success' : 'variant-glass-error') :''}"
                                                    placeholder="Your answer"
-                                                   bind:value={variable.value}/>
+                                                   bind:value={variable.value} on:input={() => {answersCorrected = false}}/>
                                         </div>
                                     {/each}
                                 {/if}
@@ -129,7 +156,7 @@
                                         <div class="mb-2 input-group input-group-divider grid-cols-[auto_1fr_auto] h-10 rounded">
                                             <input type="checkbox"
                                                    class="input-group-shim pl-2 m-auto mx-5 checkbox {option.selected ? 'variant-filled-primary': 'variant-filled-surface'}"
-                                                   bind:checked={option.selected}>
+                                                   bind:checked={option.selected} on:input={() => {answersCorrected = false}}>
                                             <div class="pl-2 outline-0 {answersCorrected ? (option.selected === option.correct ? 'variant-glass-success' : 'variant-glass-error') :''}">{option.name}</div>
                                         </div>
                                     {/each}

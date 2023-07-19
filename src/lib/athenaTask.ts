@@ -1,3 +1,5 @@
+import {generateUUID} from "$lib/utils";
+
 export type AthenaTaskAnswer = {
     type: 'text',
     text: string,
@@ -58,9 +60,16 @@ export type AthenaTask = {
     explanation: AthenaTaskExplanation,
 }
 
+export type AthenaTaskProgress = {
+    uuid: string,
+    seen: boolean,
+    completed: boolean,
+    solve_time: number,
+}
+
 export const createEmptyTask = (): AthenaTask => ({
     structVersion: 1,
-    uuid: '',
+    uuid: generateUUID(),
     title: '',
     content: {},
     answer: {
@@ -76,6 +85,13 @@ export const createEmptyTask = (): AthenaTask => ({
     explanation: {
         steps: [],
     }
+});
+
+export const createEmptyTaskProgress = (uuid: string): AthenaTaskProgress => ({
+    uuid,
+    seen: false,
+    completed: false,
+    solve_time: 0,
 });
 
 export const parseTask = (text: string): AthenaTask => {

@@ -3,7 +3,7 @@
     import '@skeletonlabs/skeleton/styles/skeleton.css';
     import '../app.postcss';
     import {currentSession, signOut, supabase} from "$lib/database";
-    import {AppBar, modeCurrent, modeOsPrefers, modeUserPrefers} from "@skeletonlabs/skeleton";
+    import {AppBar, Modal, modeCurrent, modeOsPrefers, modeUserPrefers, Toast} from "@skeletonlabs/skeleton";
     import {onMount} from "svelte";
     import {env} from "$env/dynamic/public";
 
@@ -35,6 +35,9 @@
     }
 
 </script>
+
+<Modal/>
+<Toast/>
 
 <div class="w-full h-full grid grid-rows-[auto_1fr]">
     <div class="shadow z-20 w-full" style="position: sticky; top: 0;">
