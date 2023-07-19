@@ -4,6 +4,10 @@
     import {ProgressRadial} from "@skeletonlabs/skeleton";
 
     let loading = false;
+
+    function createNewClass() {
+        alert("This feature is not yet implemented")
+    }
 </script>
 
 <div class="p-5 w-full h-full">
@@ -16,7 +20,7 @@
         </div>
 
         <div class="w-full flex justify-around mt-5">
-            <button class="btn variant-filled-primary" on:click={() => {createClass("Test", "Some test class")}}>Create
+            <button class="btn variant-filled-primary" on:click={createNewClass}>Create
                 Class
             </button>
         </div>
