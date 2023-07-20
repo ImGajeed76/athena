@@ -12,7 +12,7 @@ export const supabase = createClient(
     env.PUBLIC_SUPABASE_URL,
     env.PUBLIC_SUPABASE_KEY,
 );
-await supabase.auth.getSession();
+supabase.auth.getSession();
 
 export const currentSession: Writable<Session | null> = writable(null);
 let $currentSession: Session | null = null;
