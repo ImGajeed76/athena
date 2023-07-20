@@ -71,7 +71,7 @@
         loading = false;
     })
 
-    let currentTile = 1;
+    let currentTile = 0;
 
     async function addSubject() {
         const subjectNameModal: ModalSettings = {
