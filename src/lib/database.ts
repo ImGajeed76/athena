@@ -254,7 +254,7 @@ export async function updateTask(task: AthenaTask): Promise<AthenaTask | null> {
         return null;
     }
 
-    return data[0].task;
+    return task;
 }
 
 export async function deleteTask(taskUuid: string): Promise<boolean> {
