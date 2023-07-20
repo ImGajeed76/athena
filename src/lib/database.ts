@@ -12,6 +12,7 @@ export const supabase = createClient(
     env.PUBLIC_SUPABASE_URL,
     env.PUBLIC_SUPABASE_KEY,
 );
+await supabase.auth.getSession();
 
 export const currentSession: Writable<Session | null> = writable(null);
 let $currentSession: Session | null = null;
@@ -27,13 +28,16 @@ export async function onAuthStateChange(session: Session | null) {
     currentSession.set(session);
 
     if (!session) return;
+    const classes = await getClasses(session);
+    athenaClasses.set(classes);
+
     const email = session.user.email;
     if (!email) return;
 
     const {data, error} = await supabase
         .from("user-data")
         .select("*")
-        .eq("email", email)
+        .eq("email", email);
 
     if (error || !data || data.length === 0) {
         const {data: tableData, error: tableError} = await supabase
@@ -54,9 +58,6 @@ export async function onAuthStateChange(session: Session | null) {
 
     currentUserData.set(data);
 
-    const classes = await getClasses(session);
-    console.log(classes);
-    athenaClasses.set(classes);
 }
 
 export async function signOut() {
@@ -77,6 +78,7 @@ export async function createUser(email: string, password: string): Promise<{ dat
     return {data: signUpData, error: null};
 }
 
+export const dbConnection = writable(false);
 export const athenaClasses = writable<AthenaClass[]>([]);
 let $athenaClasses: AthenaClass[] = [];
 athenaClasses.subscribe((classes) => {
@@ -86,7 +88,6 @@ athenaClasses.subscribe((classes) => {
 export async function getClasses(session: Session | null): Promise<AthenaClass[]> {
     if (!session && $currentSession) session = $currentSession;
     if (!session) return [];
-    console.log(session);
 
     const {data, error} = await supabase
         .from("classes")
@@ -96,6 +97,8 @@ export async function getClasses(session: Session | null): Promise<AthenaClass[]
         console.error(error);
         return [];
     }
+
+    dbConnection.set(true);
 
     return data as AthenaClass[];
 }
