@@ -74,6 +74,7 @@
     let currentTile = 0;
 
     async function addSubject() {
+        if (!isAdmin) return;
         const subjectNameModal: ModalSettings = {
             type: "prompt",
             title: "New Subject",
@@ -101,6 +102,7 @@
     }
 
     async function addTask() {
+        if (!isAdmin) return;
         if (!$athenaClass) return;
         const newTask = createEmptyTask();
         newTask.title = "New Task";
@@ -111,6 +113,7 @@
     }
 
     async function changeBanner() {
+        if (!isAdmin) return;
         const bannerModal: ModalSettings = {
             type: "prompt",
             title: "Change Banner",
@@ -143,6 +146,7 @@
     let tilesBefore = 2;
 
     async function makeAdmin(email: string) {
+        if (!isAdmin) return;
         if (!$athenaClass) return;
         if (!$athenaClass.admins.includes(email)) {
             $athenaClass.admins.push(email);
@@ -164,6 +168,7 @@
     }
 
     async function makeUser(email: string) {
+        if (!isAdmin) return;
         if (!$athenaClass) return;
 
         if (email === $currentSession?.user.email) {
@@ -195,6 +200,7 @@
     }
 
     async function addUser() {
+        if (!isAdmin) return;
         const emailModal: ModalSettings = {
             type: "prompt",
             title: "Add User",
@@ -243,6 +249,7 @@
     }
 
     async function removeUser(email: string) {
+        if (!isAdmin) return;
         const confirmModal: ModalSettings = {
             type: "confirm",
             title: "Remove User",
@@ -272,6 +279,7 @@
     }
 
     async function updateTaskUsersAndAdmins() {
+        if (!isAdmin) return;
         if (!$athenaClass) return;
         for (const subject of $athenaClass.subjects) {
             for (const taskUuid of subject.task_uuids) {
