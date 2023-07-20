@@ -12,7 +12,7 @@ export const supabase = createClient(
     env.PUBLIC_SUPABASE_URL,
     env.PUBLIC_SUPABASE_KEY,
 );
-supabase.auth.getSession();
+
 
 export const currentSession: Writable<Session | null> = writable(null);
 let $currentSession: Session | null = null;
@@ -20,8 +20,10 @@ currentSession.subscribe((session) => {
     $currentSession = session
 });
 export const currentUserData: Writable<any | null> = writable(null);
-supabase.auth.onAuthStateChange(async (_, session) => {
-    await onAuthStateChange(session);
+supabase.auth.refreshSession().then(() => {
+    supabase.auth.onAuthStateChange(async (_, session) => {
+        await onAuthStateChange(session);
+    });
 });
 
 export async function onAuthStateChange(session: Session | null) {
@@ -78,7 +80,6 @@ export async function createUser(email: string, password: string): Promise<{ dat
     return {data: signUpData, error: null};
 }
 
-export const dbConnection = writable(false);
 export const athenaClasses = writable<AthenaClass[]>([]);
 let $athenaClasses: AthenaClass[] = [];
 athenaClasses.subscribe((classes) => {
@@ -97,8 +98,6 @@ export async function getClasses(session: Session | null): Promise<AthenaClass[]
         console.error(error);
         return [];
     }
-
-    dbConnection.set(true);
 
     return data as AthenaClass[];
 }
