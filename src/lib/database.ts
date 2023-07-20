@@ -5,7 +5,7 @@ import type {Writable} from "svelte/store";
 import {writable} from "svelte/store";
 import type {AthenaClass} from "$lib/athenaClass";
 import type {AthenaTask, AthenaTaskProgress} from "$lib/athenaTask";
-import {createEmptyTaskProgress} from "$lib/athenaTask";
+import {createEmptyTaskProgress, updateTaskVersion} from "$lib/athenaTask";
 import {getRandomUnsplashImage} from "$lib/utils";
 
 export const supabase = createClient(
@@ -190,7 +190,9 @@ export async function createClass(name: string, description: string) {
 }
 
 export async function getTask(taskUuid: string): Promise<AthenaTask | null> {
-    return (await getTaskData(taskUuid))?.task ?? null;
+    const data = await getTaskData(taskUuid);
+    if (!data) return null;
+    return updateTaskVersion(data.task);
 }
 
 export async function getTaskData(taskUuid: string): Promise<any | null> {

@@ -194,7 +194,9 @@
             reader.onload = readerEvent => {
                 const fileContent = readerEvent.target.result;
                 if (typeof fileContent === "string") {
-                    $task = parseTask(fileContent);
+                    const newTask = parseTask(fileContent);
+                    newTask.uuid = $task.uuid;
+                    $task = newTask;
                 }
                 task.set($task);
                 content.set($task.content);

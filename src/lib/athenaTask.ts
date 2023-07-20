@@ -96,14 +96,18 @@ export const createEmptyTaskProgress = (uuid: string): AthenaTaskProgress => ({
 
 export const parseTask = (text: string): AthenaTask => {
     const JSONData = JSON.parse(text);
-    if (JSONData.structVersion === undefined) {
-        JSONData.structVersion = 1;
+    return updateTaskVersion(JSONData);
+}
+
+export const updateTaskVersion = (task: AthenaTask): AthenaTask => {
+    if (task.structVersion === undefined) {
+        task.structVersion = 1;
     }
 
-    switch (JSONData.structVersion) {
+    switch (task.structVersion) {
         case 1:
-            return JSONData as AthenaTask;
+            return task as AthenaTask;
         default:
-            throw new Error(`Unknown task struct version: ${JSONData.structVersion}`);
+            throw new Error(`Unknown task struct version: ${task.structVersion}`);
     }
 }
