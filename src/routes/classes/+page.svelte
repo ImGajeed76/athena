@@ -1,8 +1,8 @@
 <script lang="ts">
-    import {athenaClasses, createClass, updateClass} from "$lib/database";
+    import {athenaClasses, createClass, currentSession} from "$lib/database";
     import ClassPreview from "./ClassPreview.svelte";
-    import {modalStore, ProgressRadial, toastStore} from "@skeletonlabs/skeleton";
     import type {ModalSettings} from "@skeletonlabs/skeleton";
+    import {modalStore} from "@skeletonlabs/skeleton";
 
     function createNewClass() {
         const classNameModal: ModalSettings = {
@@ -30,8 +30,14 @@
     </div>
 
     <div class="w-full flex justify-around mt-5">
-        <button class="btn variant-filled-primary" on:click={createNewClass}>Create
-            Class
-        </button>
+        {#if $currentSession}
+            <button class="btn variant-filled-primary" on:click={createNewClass}>
+                Create Class
+            </button>
+        {:else}
+            <a href="/login" class="btn variant-filled-primary">
+                Please Login
+            </a>
+        {/if}
     </div>
 </div>
