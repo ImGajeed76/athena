@@ -86,7 +86,7 @@ athenaClasses.subscribe((classes) => {
     $athenaClasses = classes;
 });
 
-export async function getClasses(session: Session | null): Promise<AthenaClass[]> {
+export async function getClasses(session: Session | null = null): Promise<AthenaClass[]> {
     if (!session && $currentSession) session = $currentSession;
     if (!session) return [];
 
@@ -161,7 +161,7 @@ export async function createClass(name: string, description: string) {
 
     if (data.length === 0 || !data) return;
 
-    athenaClasses.set(data);
+    athenaClasses.set(await getClasses(null));
     console.log(data);
 }
 
