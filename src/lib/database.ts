@@ -127,6 +127,30 @@ export async function updateClass(classData: AthenaClass) {
     return true;
 }
 
+export async function deleteClass(athenaClass: AthenaClass) {
+    if (!$currentSession) return false;
+    if (!$currentSession.user.email) return false;
+
+    for (const subject in athenaClass.subjects) {
+        for (const task_uuid of athenaClass.subjects[subject].task_uuids) {
+            await deleteTask(task_uuid);
+        }
+    }
+
+    const {error} = await supabase
+        .from("classes")
+        .delete()
+        .eq("uuid", athenaClass.uuid)
+
+    if (error) {
+        console.error(error);
+        return false;
+    }
+
+    athenaClasses.set(await getClasses(null));
+    return true;
+}
+
 export async function createClass(name: string, description: string) {
     if (!$currentSession) return;
     if (!$currentSession.user.email) return;

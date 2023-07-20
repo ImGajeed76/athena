@@ -5,7 +5,7 @@
     import {
         athenaClasses,
         createTask,
-        currentSession,
+        currentSession, deleteClass,
         updateClass,
         updateTaskAdmins,
         updateTaskUsers
@@ -288,6 +288,44 @@
             }
         }
     }
+
+    async function deleteAthenaClass() {
+        if (!isAdmin) return;
+        const confirmModal: ModalSettings = {
+            type: "prompt",
+            title: "Delete Class",
+            body: `Are you sure you want to delete ${$athenaClass?.name}? This action is irreversible! Please type the name of the class to confirm.`,
+            valueAttr: {type: "text", minlength: 1, required: true},
+            response: async (r: string) => {
+                if (!r) return;
+                if (!$athenaClass) return;
+                if (r === $athenaClass?.name) {
+                    if (await deleteClass($athenaClass)) {
+                        toastStore.trigger({
+                            message: "Class deleted!",
+                            timeout: 2000,
+                            background: "variant-filled-success"
+                        })
+                        await goto("/classes");
+                    } else {
+                        toastStore.trigger({
+                            message: "Failed to delete class!",
+                            timeout: 2000,
+                            background: "variant-filled-error"
+                        })
+                    }
+                } else {
+                    toastStore.trigger({
+                        message: "Class name does not match!",
+                        timeout: 2000,
+                        background: "variant-filled-error"
+                    })
+                }
+            }
+        }
+
+        modalStore.trigger(confirmModal);
+    }
 </script>
 
 
@@ -457,6 +495,10 @@
                                                 </button>
                                             </div>
                                         </div>
+                                    </div>
+                                    <hr class="mb-5">
+                                    <div class="w-full flex justify-around pb-10">
+                                        <button class="btn variant-glass-error hover:variant-filled-error rounded" on:click={deleteAthenaClass}>Delete Class</button>
                                     </div>
                                 </div>
                             </div>
