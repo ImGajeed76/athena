@@ -1,5 +1,3 @@
-import type {AthenaTask} from "$lib/athenaTask";
-
 export type AthenaClass = {
     uuid: string,
     name: string,
@@ -13,5 +11,5 @@ export type AthenaClass = {
 export type AthenaSubjects = {
     name: string,
     description: string,
-    tasks: AthenaTask[],
+    task_uuids: string[],
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
     import type {Writable} from "svelte/store";
     import {createUser} from "$lib/database";
+    import {validateEmail} from "$lib/utils";
 
     export let selected: Writable<number>;
     let info: {
@@ -16,12 +17,12 @@
     let confirmPassword = "";
 
     async function isEmailValid() {
-        let regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!regex.test(email)) {
+        const isValid = validateEmail(email);
+        if (!isValid) {
             info.color = "text-error-500";
             info.text = "Email is invalid";
         }
-        return regex.test(email);
+        return isValid;
     }
 
     async function isPasswordValid() {

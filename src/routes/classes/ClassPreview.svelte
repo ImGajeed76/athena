@@ -1,8 +1,16 @@
 <script lang="ts">
+    import {getRandomUnsplashImage} from "$lib/utils";
+    import {afterUpdate, onMount} from "svelte";
+    import {writable} from "svelte/store";
+
     export let title: string;
     export let description: string;
     export let image: string;
     export let uuid: string;
+
+    onMount(async () => {
+        if (image === "" || !image) image = await getRandomUnsplashImage(['landscape', 'mountains']);
+    })
 </script>
 
 <a class="card card-hover overflow-hidden m-3" href="/classes/{uuid}">
