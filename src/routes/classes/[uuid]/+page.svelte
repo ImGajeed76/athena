@@ -106,10 +106,10 @@
         if (!$athenaClass) return;
         const newTask = createEmptyTask();
         newTask.title = "New Task";
-        $athenaClass.subjects[currentTile - 1].task_uuids.push(newTask.uuid);
+        $athenaClass.subjects[currentTile - tilesBefore].task_uuids.push(newTask.uuid);
         await updateClass($athenaClass);
         await createTask(newTask);
-        await goto(`/classes/${$athenaClass.uuid}/${$athenaClass.subjects[currentTile - 1].name}/edit/${newTask.uuid}`);
+        await goto(`/classes/${$athenaClass.uuid}/${$athenaClass.subjects[currentTile - tilesBefore].name}/edit/${newTask.uuid}`);
     }
 
     async function changeBanner() {
