@@ -108,7 +108,8 @@
         "https://i.giphy.com/media/mGK1g88HZRa2FlKGbz/giphy.webp",
         "https://media0.giphy.com/media/YRuFixSNWFVcXaxpmX/giphy.gif?cid=ecf05e47rt9o4f4gyn585qs4455u43qt9rfhxvvio61pr528&ep=v1_gifs_search&rid=giphy.gif&ct=g",
         "https://i.giphy.com/media/d31w24psGYeekCZy/giphy.webp",
-        "https://i.giphy.com/media/l3q2SH4Cmhh8F40jS/giphy.webp"
+        "https://i.giphy.com/media/l3q2SH4Cmhh8F40jS/giphy.webp",
+        "https://tvovermind.com/wp-content/uploads/2017/04/gastsby-whatgatsby.jpg.gif"
     ]
 </script>
 
