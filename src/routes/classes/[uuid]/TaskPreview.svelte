@@ -9,7 +9,8 @@
     import {page} from "$app/stores";
     import type {AthenaClass} from "$lib/athenaClass";
     import type {ModalSettings} from "@skeletonlabs/skeleton";
-    import {modalStore, SlideToggle} from "@skeletonlabs/skeleton";
+    import {Modal, modalStore, SlideToggle} from "@skeletonlabs/skeleton";
+    import VisibilityModal from "./VisibilityModal.svelte";
 
     export let athenaClass: Writable<AthenaClass>;
     export let taskUuid: string;
@@ -19,8 +20,6 @@
 
     let userProgress = writable<AthenaTaskProgress>();
     let originalTask: AthenaTask;
-
-    let visible = writable(false);
 
     onMount(async () => {
         const taskData = await getTaskData(taskUuid);
@@ -32,9 +31,8 @@
             return;
         }
         originalTask = taskData.task;
-        visible = writable(taskData.users === $athenaClass.users);
 
-        const progress = await getTaskProgress(taskUuid);
+        const progress = await getTaskProgress(taskUuid, originalTask.answer);
         console.log(progress);
         if (!progress) throw new Error(`No progress found for [${subject}] with uuid [${taskUuid}]`);
         userProgress.set(progress)
@@ -62,12 +60,24 @@
         modalStore.trigger(confirmModal);
     }
 
+    async function openVisibility() {
+        const visibilityModal: ModalSettings = {
+            type: "component",
+            component: {
+                ref: VisibilityModal,
+                props: {
+                    taskUuid: taskUuid,
+                    athenaClass: $athenaClass,
+                    reopen: openVisibility
+                }
+            }
+        }
 
-    visible.subscribe(async (value) => {
-        if (value) await updateTaskUsers(taskUuid, $athenaClass.users, "append")
-        else await updateTaskUsers(taskUuid, $athenaClass.users, "remove")
-    })
+        modalStore.trigger(visibilityModal);
+    }
 </script>
+
+<Modal/>
 
 {#if originalTask}
     {#if isAdmin && isEditing}
@@ -83,7 +93,7 @@
                     </button>
                     <button class="chip variant-glass-error" on:click={deleteAthenaTask}>Delete</button>
                 </div>
-                <SlideToggle size="sm" bind:checked={$visible}>User Visibility</SlideToggle>
+                <button class="chip variant-glass hover:variant-filled-warning" on:click={openVisibility}>Visibility</button>
             </div>
         </div>
     {:else}
@@ -107,7 +117,8 @@
                 <p class="text-sm text-surface-200">You're already on it
                     since {millsToTimeFormat($userProgress.solve_time)}</p>
             {:else if $userProgress && $userProgress.seen && $userProgress.completed}
-                <p class="text-sm text-surface-200">You have completed this task in {millsToTimeFormat($userProgress.solve_time)}</p>
+                <p class="text-sm text-surface-200">You have completed this task
+                    in {millsToTimeFormat($userProgress.solve_time)}</p>
             {:else if $userProgress && !$userProgress.seen}
                 <p class="text-sm text-surface-200">You have not seen this task yet.</p>
             {/if}

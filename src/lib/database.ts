@@ -4,7 +4,7 @@ import {env} from "$env/dynamic/public";
 import type {Writable} from "svelte/store";
 import {writable} from "svelte/store";
 import type {AthenaClass} from "$lib/athenaClass";
-import type {AthenaTask, AthenaTaskProgress} from "$lib/athenaTask";
+import type {AthenaTask, AthenaTaskAnswer, AthenaTaskData, AthenaTaskProgress} from "$lib/athenaTask";
 import {createEmptyTaskProgress, updateTaskVersion} from "$lib/athenaTask";
 import {getRandomUnsplashImage} from "$lib/utils";
 
@@ -195,7 +195,7 @@ export async function getTask(taskUuid: string): Promise<AthenaTask | null> {
     return updateTaskVersion(data.task);
 }
 
-export async function getTaskData(taskUuid: string): Promise<any | null> {
+export async function getTaskData(taskUuid: string): Promise<AthenaTaskData | null> {
     if (!$currentSession) return null;
     if (!$currentSession.user.email) return null;
 
@@ -377,7 +377,7 @@ export async function updateTaskUsers(taskUuid: string, userEmails: string[], op
     return data[0].task;
 }
 
-export async function getTaskProgress(taskUuid: string): Promise<AthenaTaskProgress | null> {
+export async function getTaskProgress(taskUuid: string, answer: AthenaTaskAnswer): Promise<AthenaTaskProgress | null> {
     if (!$currentSession) return null;
     if (!$currentSession.user.email) return null;
 
@@ -397,7 +397,7 @@ export async function getTaskProgress(taskUuid: string): Promise<AthenaTaskProgr
             .insert({
                 task_uuid: taskUuid,
                 email: $currentSession.user.email,
-                progress: createEmptyTaskProgress(taskUuid),
+                progress: createEmptyTaskProgress(taskUuid, answer),
             })
             .select()
 

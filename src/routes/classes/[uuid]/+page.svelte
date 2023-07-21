@@ -5,19 +5,20 @@
     import {
         athenaClasses,
         createTask,
-        currentSession, deleteClass,
+        currentSession,
+        deleteClass,
+        getTaskData,
         updateClass,
-        updateTaskAdmins,
         updateTaskUsers
     } from "$lib/database";
     import type {ModalSettings} from "@skeletonlabs/skeleton";
     import {
         AppRail,
         AppRailAnchor,
-        AppRailTile,
+        AppRailTile, Modal,
         modalStore,
         ProgressRadial,
-        SlideToggle,
+        SlideToggle, Toast,
         toastStore
     } from "@skeletonlabs/skeleton";
     import type {Writable} from "svelte/store";
@@ -156,7 +157,6 @@
                     timeout: 2000,
                     background: "variant-filled-success"
                 })
-                await updateTaskUsersAndAdmins();
             } else {
                 toastStore.trigger({
                     message: "Failed to make user an admin!",
@@ -188,7 +188,6 @@
                     timeout: 2000,
                     background: "variant-filled-success"
                 })
-                await updateTaskUsersAndAdmins();
             } else {
                 toastStore.trigger({
                     message: "Failed to make user a user!",
@@ -200,6 +199,8 @@
     }
 
     async function addUser() {
+        if (!$athenaClass) return;
+        const oldClassUsers = [...$athenaClass.users];
         if (!isAdmin) return;
         const emailModal: ModalSettings = {
             type: "prompt",
@@ -226,7 +227,7 @@
                                 timeout: 2000,
                                 background: "variant-filled-success"
                             })
-                            await updateTaskUsersAndAdmins();
+                            await updateTaskUsersFromClass(oldClassUsers);
                         } else {
                             toastStore.trigger({
                                 message: "Failed to add user!",
@@ -249,6 +250,8 @@
     }
 
     async function removeUser(email: string) {
+        if (!$athenaClass) return;
+        const oldClassUsers = [...$athenaClass.users];
         if (!isAdmin) return;
         const confirmModal: ModalSettings = {
             type: "confirm",
@@ -264,7 +267,7 @@
                         timeout: 2000,
                         background: "variant-filled-success"
                     })
-                    await updateTaskUsersAndAdmins();
+                    await updateTaskUsersFromClass(oldClassUsers);
                 } else {
                     toastStore.trigger({
                         message: "Failed to remove user!",
@@ -276,17 +279,6 @@
         }
 
         modalStore.trigger(confirmModal);
-    }
-
-    async function updateTaskUsersAndAdmins() {
-        if (!isAdmin) return;
-        if (!$athenaClass) return;
-        for (const subject of $athenaClass.subjects) {
-            for (const taskUuid of subject.task_uuids) {
-                await updateTaskAdmins(taskUuid, $athenaClass.admins, "set");
-                await updateTaskUsers(taskUuid, $athenaClass.users, "set");
-            }
-        }
     }
 
     async function deleteAthenaClass() {
@@ -326,8 +318,22 @@
 
         modalStore.trigger(confirmModal);
     }
-</script>
 
+    async function updateTaskUsersFromClass(oldClassUsers: string[]) {
+        if (!$athenaClass) return;
+        if (!$athenaClass.subjects[currentTile - tilesBefore]) return;
+        if (!$athenaClass.subjects[currentTile - tilesBefore].task_uuids) return;
+        for (const subject of $athenaClass.subjects) {
+            for (const task_uuid of subject.task_uuids) {
+                const task = await getTaskData(task_uuid);
+                if (!task) continue;
+                if (task.users === oldClassUsers) {
+                    await updateTaskUsers(task_uuid, $athenaClass.users, "set");
+                }
+            }
+        }
+    }
+</script>
 
 {#if !loading}
     {#if $athenaClass}
@@ -404,7 +410,7 @@
                     </AppRail>
                     <div class="w-full h-full p-10 overflow-y-auto relative">
                         {#if isAdmin}
-                            <div class="absolute top-0 right-0 m-3">
+                            <div class="absolute top-0 right-0 m-2 mr-3">
                                 <SlideToggle active="bg-primary-500" size="sm" bind:checked={isEditing}>Edit
                                 </SlideToggle>
                             </div>
@@ -476,10 +482,12 @@
                                                                     <p class="">User</p>
                                                                     <div>
                                                                         <button class="chip variant-glass hover:variant-glass-success"
-                                                                                on:click={() => {makeAdmin(user)}}>Make Admin
+                                                                                on:click={() => {makeAdmin(user)}}>Make
+                                                                            Admin
                                                                         </button>
                                                                         <button class="chip variant-glass hover:variant-glass-error"
-                                                                                on:click={() => {removeUser(user)}}>Remove User
+                                                                                on:click={() => {removeUser(user)}}>
+                                                                            Remove User
                                                                         </button>
                                                                     </div>
                                                                 {/if}
@@ -498,7 +506,9 @@
                                     </div>
                                     <hr class="mb-5">
                                     <div class="w-full flex justify-around pb-10">
-                                        <button class="btn variant-glass-error hover:variant-filled-error rounded" on:click={deleteAthenaClass}>Delete Class</button>
+                                        <button class="btn variant-glass-error hover:variant-filled-error rounded"
+                                                on:click={deleteAthenaClass}>Delete Class
+                                        </button>
                                     </div>
                                 </div>
                             </div>

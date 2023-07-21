@@ -65,6 +65,14 @@ export type AthenaTaskProgress = {
     seen: boolean,
     completed: boolean,
     solve_time: number,
+    answer: AthenaTaskAnswer,
+}
+
+export type AthenaTaskData = {
+    uuid: string,
+    task: AthenaTask,
+    users: string[],
+    admins: string[],
 }
 
 export const createEmptyTask = (): AthenaTask => ({
@@ -87,11 +95,12 @@ export const createEmptyTask = (): AthenaTask => ({
     }
 });
 
-export const createEmptyTaskProgress = (uuid: string): AthenaTaskProgress => ({
+export const createEmptyTaskProgress = (uuid: string, answer: AthenaTaskAnswer): AthenaTaskProgress => ({
     uuid,
     seen: false,
     completed: false,
     solve_time: 0,
+    answer
 });
 
 export const parseTask = (text: string): AthenaTask => {
@@ -110,4 +119,22 @@ export const updateTaskVersion = (task: AthenaTask): AthenaTask => {
         default:
             throw new Error(`Unknown task struct version: ${task.structVersion}`);
     }
+}
+
+export const removeAllAnswers = (task: AthenaTask): AthenaTask => {
+    const newTask = {...task};
+    if (newTask.answer.type === 'text') {
+        newTask.answer.text = '';
+    } else if (newTask.answer.type === 'variables') {
+        newTask.answer.variables = newTask.answer.variables.map(variable => ({
+            ...variable,
+            value: '',
+        }));
+    } else if (newTask.answer.type === 'multiple_choice') {
+        newTask.answer.options = newTask.answer.options.map(option => ({
+            ...option,
+            selected: false,
+        }));
+    }
+    return newTask;
 }

@@ -21,13 +21,23 @@
         if (!athenaTask) return;
         task.set(athenaTask);
 
-        const athenaTaskProgress = await getTaskProgress(athenaTask.uuid);
+        const athenaTaskProgress = await getTaskProgress(athenaTask.uuid, $task.answer);
         if (!athenaTaskProgress) return;
         user_progress.set(athenaTaskProgress);
+        $task.answer = athenaTaskProgress.answer;
 
         if (!$user_progress.seen) {
             $user_progress.seen = true;
             await updateTaskProgress($user_progress.uuid, $user_progress);
+        }
+    })
+
+    task.subscribe((value) => {
+        if (!value) return;
+        if (!$user_progress) return;
+        if ({...value.answer} !== $user_progress.answer) {
+            $user_progress.answer = value.answer;
+            updateTaskProgress($user_progress.uuid, $user_progress);
         }
     })
 

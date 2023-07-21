@@ -7,6 +7,7 @@
     import {writable} from "svelte/store";
     import {ProgressRadial, Tab, TabGroup, toastStore} from "@skeletonlabs/skeleton";
     import Task_Viewer from "../../../../../../modules/Task_Viewer.svelte";
+    import {removeAllAnswers} from "$lib/athenaTask.js";
 
     let taskUuid = $page.params.task_uuid;
 
@@ -52,7 +53,7 @@
 
     async function saveTask() {
         if (!$task) return;
-        return await updateTask($task);
+        return await updateTask(removeAllAnswers($task));
     }
 
     setInterval(() => {

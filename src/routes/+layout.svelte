@@ -2,6 +2,10 @@
     import '../theme.postcss';
     import '@skeletonlabs/skeleton/styles/skeleton.css';
     import '../app.postcss';
+    import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+    import { storePopup } from '@skeletonlabs/skeleton';
+    storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+
     import {currentSession, signOut} from "$lib/database";
     import {AppBar, Modal, modeCurrent, modeOsPrefers, modeUserPrefers, Toast} from "@skeletonlabs/skeleton";
     import {onMount} from "svelte";
@@ -9,15 +13,14 @@
     const theme: "light" | "dark" = "dark";
 
     onMount(async () => {
-
         $modeOsPrefers = theme === "light";
         $modeUserPrefers = theme === "light";
         $modeCurrent = theme === "light";
     });
 </script>
 
-<Modal/>
 <Toast/>
+<Modal/>
 
 <div class="w-full h-full grid grid-rows-[auto_1fr]">
     <div class="shadow z-20 w-full" style="position: sticky; top: 0;">
