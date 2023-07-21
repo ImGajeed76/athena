@@ -27,14 +27,16 @@
     let saveEvent = null;
 
     onMount(async () => {
-        saveEvent =  async (e) => {
-            if ($page.route.id !== "/classes/[uuid]/[subject]/edit/[task_uuid]") {
-                window.removeEventListener("keydown", saveEvent);
-                return;
-            }
+        const startPathName = window.location.pathname;
 
+        saveEvent =  async (e) => {
             if (e.ctrlKey && e.key === "s") {
                 e.preventDefault();
+                if (window.location.pathname !== startPathName) {
+                    window.removeEventListener("keydown", saveEvent);
+                    return;
+                }
+
                 if (await saveTask()) {
                     toastStore.trigger({
                         message: "Task saved!",

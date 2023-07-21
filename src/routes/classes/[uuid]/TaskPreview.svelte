@@ -33,12 +33,8 @@
         originalTask = taskData.task;
 
         const progress = await getTaskProgress(taskUuid, originalTask.answer);
-        console.log(progress);
         if (!progress) throw new Error(`No progress found for [${subject}] with uuid [${taskUuid}]`);
         userProgress.set(progress)
-
-
-        console.log($page)
     })
 
     async function deleteAthenaTask() {
