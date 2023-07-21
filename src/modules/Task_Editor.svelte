@@ -8,6 +8,7 @@
     import VideoPlayer from "./players/VideoPlayer.svelte";
     import AudioPlayer from "./players/AudioPlayer.svelte";
     import {onMount} from "svelte";
+    import {download} from "$lib/utils";
 
     let variableName = '';
     let variableCorrectValue = '';
@@ -173,19 +174,6 @@
 
     function getURL(src) {
         return `url(${src})`;
-    }
-
-    function download(filename: string, text: string) {
-        let element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-        element.setAttribute('download', filename);
-
-        element.style.display = 'none';
-        document.body.appendChild(element);
-
-        element.click();
-
-        document.body.removeChild(element);
     }
 
     async function upload() {

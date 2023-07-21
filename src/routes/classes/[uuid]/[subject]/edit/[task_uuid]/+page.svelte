@@ -25,11 +25,12 @@
     })
 
     let saveEvent = null;
+    let startPathName = "";
 
     onMount(async () => {
-        const startPathName = window.location.pathname;
+        startPathName = window.location.pathname;
 
-        saveEvent =  async (e) => {
+        saveEvent = async (e) => {
             if (e.ctrlKey && e.key === "s") {
                 e.preventDefault();
                 if (window.location.pathname !== startPathName) {
@@ -37,19 +38,7 @@
                     return;
                 }
 
-                if (await saveTask()) {
-                    toastStore.trigger({
-                        message: "Task saved!",
-                        background: "variant-filled-success",
-                        timeout: 3000
-                    })
-                } else {
-                    toastStore.trigger({
-                        message: "Failed to save task!",
-                        background: "variant-filled-error",
-                        timeout: 3000
-                    })
-                }
+                await saveTaskWithAlert();
             }
         }
 
@@ -65,13 +54,37 @@
         saveTask();
     });
 
+    async function saveTaskWithAlert() {
+        if (await saveTask()) {
+            toastStore.trigger({
+                message: "Task saved!",
+                background: "variant-filled-success",
+                timeout: 3000
+            })
+        } else {
+            toastStore.trigger({
+                message: "Failed to save task!",
+                background: "variant-filled-error",
+                timeout: 3000
+            })
+        }
+    }
+
     async function saveTask() {
         if (!$task) return;
         return await updateTask(removeAllAnswers($task));
     }
 
-    setInterval(() => {
-        saveTask();
+    const saveInterval = setInterval(() => {
+        try {
+            if (window.location.pathname !== startPathName) {
+                clearInterval(saveInterval);
+                return;
+            }
+            saveTask();
+        } catch (e) {
+            clearInterval(saveInterval);
+        }
     }, 10000);
 </script>
 
@@ -93,6 +106,9 @@
             {:else if currentTab === 1}
                 <Task_Viewer task={task}/>
             {/if}
+            <div class="w-full flex justify-around">
+                <button class="btn variant-glass-success rounded" on:click={saveTaskWithAlert}>Save Task</button>
+            </div>
         </div>
     {:else}
         <div class="w-full h-full grid items-center text-center">

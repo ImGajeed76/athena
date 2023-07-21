@@ -6,8 +6,8 @@
         athenaClasses,
         createTask,
         currentSession,
-        deleteClass,
-        getTaskData,
+        deleteClass, getTask,
+        getTaskData, getTaskProgress, loadTaskData,
         updateClass,
         updateTaskUsers
     } from "$lib/database";
@@ -25,6 +25,7 @@
     import {writable} from "svelte/store";
     import TaskPreview from "./TaskPreview.svelte";
     import {createEmptyTask} from "$lib/athenaTask";
+    import type {AthenaTask, AthenaTaskProgress} from "$lib/athenaTask";
     import {goto} from "$app/navigation";
     import {validateEmail} from "$lib/utils";
 
@@ -38,8 +39,9 @@
     let loading = true;
     let loadingText = "Loading...";
 
-    athenaClasses.subscribe(classes => {
+    athenaClasses.subscribe(async classes => {
         if (classes.length === 0) return;
+        await loadTaskData();
         athenaClass = writable(classes.find(c => c.uuid === uuid)) || writable(undefined);
         originalAthenaClass = JSON.stringify($athenaClass);
         const currentUserEmail = $currentSession?.user.email;
@@ -49,7 +51,7 @@
         loading = false;
     })
 
-    onMount(() => {
+    onMount(async () => {
         setTimeout(() => {
             if (loading) {
                 loadingText = "This is taking longer than usual...";
@@ -63,6 +65,7 @@
         }, 15000);
 
         if ($athenaClasses.length === 0) return;
+        await loadTaskData();
         athenaClass = writable($athenaClasses.find(c => c.uuid === uuid)) || writable(undefined);
         originalAthenaClass = JSON.stringify($athenaClass);
         const currentUserEmail = $currentSession?.user.email;
@@ -72,7 +75,7 @@
         loading = false;
     })
 
-    let currentTile = 0;
+    let currentTile = writable(0);
 
     async function addSubject() {
         if (!isAdmin) return;
@@ -107,10 +110,10 @@
         if (!$athenaClass) return;
         const newTask = createEmptyTask();
         newTask.title = "New Task";
-        $athenaClass.subjects[currentTile - tilesBefore].task_uuids.push(newTask.uuid);
+        $athenaClass.subjects[$currentTile - tilesBefore].task_uuids.push(newTask.uuid);
         await createTask(newTask);
         await updateClass($athenaClass);
-        await goto(`/classes/${$athenaClass.uuid}/${$athenaClass.subjects[currentTile - tilesBefore].name}/edit/${newTask.uuid}`);
+        await goto(`/classes/${$athenaClass.uuid}/${$athenaClass.subjects[$currentTile - tilesBefore].name}/edit/${newTask.uuid}`);
     }
 
     async function changeBanner() {
@@ -321,8 +324,8 @@
 
     async function updateTaskUsersFromClass(oldClassUsers: string[]) {
         if (!$athenaClass) return;
-        if (!$athenaClass.subjects[currentTile - tilesBefore]) return;
-        if (!$athenaClass.subjects[currentTile - tilesBefore].task_uuids) return;
+        if (!$athenaClass.subjects[$currentTile - tilesBefore]) return;
+        if (!$athenaClass.subjects[$currentTile - tilesBefore].task_uuids) return;
         for (const subject of $athenaClass.subjects) {
             for (const task_uuid of subject.task_uuids) {
                 const task = await getTaskData(task_uuid);
@@ -333,6 +336,71 @@
             }
         }
     }
+
+    let searchQuery = writable("");
+    let viewCompleted = writable(true);
+    let viewSeen = writable(true);
+    let viewNew = writable(true);
+
+    let taskDict: Writable<Record<string, { task: AthenaTask, progress: AthenaTaskProgress }>> = writable({});
+    let taskDictValues: Writable<string[]> = writable([]);
+    let sortedTaskDict: Writable<string[]> = writable([]);
+
+    async function generateTaskDictForCurrentSubject() {
+        if (!$athenaClass) return;
+        if (!$athenaClass.subjects[$currentTile - tilesBefore]) return;
+        if (!$athenaClass.subjects[$currentTile - tilesBefore].task_uuids) return;
+        const newTaskDict: Record<string, { task: AthenaTask, progress: AthenaTaskProgress }> = {};
+        for (const task_uuid of $athenaClass.subjects[$currentTile - tilesBefore].task_uuids) {
+            const task = await getTask(task_uuid);
+            if (!task) continue;
+            const progress = await getTaskProgress(task_uuid, task.answer);
+            if (!progress) continue;
+            newTaskDict[task.uuid] = {task, progress};
+        }
+        taskDict.set(newTaskDict);
+        taskDictValues.set(Object.keys(newTaskDict));
+        await sortTaskDict();
+    }
+
+    async function sortTaskDict() {
+        const newSortedTaskDict: string[] = [];
+        const searchQueryValue = $searchQuery.toLowerCase();
+        for (const [uuid, task] of Object.entries($taskDict)) {
+            if (
+                (task.task.title.toLowerCase().includes(searchQueryValue) || $searchQuery === "" || !$searchQuery) &&
+                (
+                    ($viewCompleted === task.progress.completed && $viewCompleted) ||
+                    ($viewSeen === task.progress.seen && !task.progress.completed && $viewSeen) ||
+                    ($viewNew === !task.progress.seen && $viewNew)
+                )
+            ) {
+                newSortedTaskDict.push(uuid);
+            }
+        }
+        sortedTaskDict.set(newSortedTaskDict);
+    }
+
+    currentTile.subscribe(async () => {
+        if ($currentTile < tilesBefore) return;
+        await generateTaskDictForCurrentSubject();
+    })
+
+    viewCompleted.subscribe(() => {
+        sortTaskDict();
+    })
+
+    viewSeen.subscribe(() => {
+        sortTaskDict();
+    })
+
+    viewNew.subscribe(() => {
+        sortTaskDict();
+    })
+
+    searchQuery.subscribe(() => {
+        sortTaskDict();
+    });
 </script>
 
 {#if !loading}
@@ -363,20 +431,20 @@
                             <AppRailAnchor><p class="h4 m-3">Subjects:</p></AppRailAnchor>
                         </svelte:fragment>
 
-                        <AppRailTile bind:group={currentTile} name="tile-{0}" value={0} title="tile-{0}">
+                        <AppRailTile bind:group={$currentTile} name="tile-{0}" value={0} title="tile-{0}">
                             <div class="m-3 h6 flex justify-between">
                                 <p>Home</p>
-                                {#if currentTile === 0}
+                                {#if $currentTile === 0}
                                     <p>-></p>
                                 {/if}
                             </div>
                         </AppRailTile>
 
                         {#if isAdmin}
-                            <AppRailTile bind:group={currentTile} name="tile-{1}" value={1} title="tile-{1}">
+                            <AppRailTile bind:group={$currentTile} name="tile-{1}" value={1} title="tile-{1}">
                                 <div class="m-3 h6 flex justify-between">
                                     <p>Settings</p>
-                                    {#if currentTile === 1}
+                                    {#if $currentTile === 1}
                                         <p>-></p>
                                     {/if}
                                 </div>
@@ -386,11 +454,11 @@
                         <hr class="my-3">
 
                         {#each $athenaClass.subjects as subject, i}
-                            <AppRailTile bind:group={currentTile} name="tile-{i+tilesBefore}" value={i+tilesBefore}
+                            <AppRailTile bind:group={$currentTile} name="tile-{i+tilesBefore}" value={i+tilesBefore}
                                          title="tile-{i+tilesBefore}">
                                 <div class="m-3 h6 flex justify-between">
                                     <p>{subject.name}</p>
-                                    {#if currentTile === i + tilesBefore}
+                                    {#if $currentTile === i + tilesBefore}
                                         <p>-></p>
                                     {/if}
                                 </div>
@@ -411,12 +479,13 @@
                     <div class="w-full h-full p-10 overflow-y-auto relative">
                         {#if isAdmin}
                             <div class="absolute top-0 right-0 m-2 mr-3">
-                                <SlideToggle active="bg-primary-500" size="sm" bind:checked={isEditing}>Edit
+                                <SlideToggle name="editToggle" active="bg-primary-500" size="sm"
+                                             bind:checked={isEditing}>Edit
                                 </SlideToggle>
                             </div>
                         {/if}
-                        {#if currentTile === 0}
-                            <div class="h-full grid grid-rows-[auto_auto_1fr]">
+                        {#if $currentTile === 0}
+                            <div class="h-full grid grid-rows-[auto_auto_1fr] max-w-6xl m-auto">
                                 {#if isAdmin && isEditing}
                                     <input type="text" class="input rounded h1 variant-form-material"
                                            bind:value={$athenaClass.name}
@@ -452,8 +521,8 @@
                                     <p>{$athenaClass.description}</p>
                                 {/if}
                             </div>
-                        {:else if currentTile === 1}
-                            <div class="h-full grid grid-rows-[auto_auto_1fr]">
+                        {:else if $currentTile === 1}
+                            <div class="h-full grid grid-rows-[auto_auto_1fr] max-w-6xl m-auto">
                                 <p class="h1">Settings</p>
                                 <hr class="my-5">
                                 <div>
@@ -512,11 +581,11 @@
                                     </div>
                                 </div>
                             </div>
-                        {:else if $athenaClass.subjects && $athenaClass.subjects.length + tilesBefore > currentTile}
-                            <div class="h-full">
+                        {:else if $athenaClass.subjects && $athenaClass.subjects.length + tilesBefore > $currentTile}
+                            <div class="h-full max-w-6xl m-auto">
                                 {#if isAdmin && isEditing}
                                     <input type="text" class="input rounded h1 variant-form-material"
-                                           bind:value={$athenaClass.subjects[currentTile - tilesBefore].name}
+                                           bind:value={$athenaClass.subjects[$currentTile - tilesBefore].name}
                                            on:blur={async () => {
                                                if (originalAthenaClass === JSON.stringify($athenaClass)) return;
                                                await updateClass($athenaClass);
@@ -528,12 +597,12 @@
                                            }}
                                     >
                                 {:else}
-                                    <p class="h1">{$athenaClass.subjects[currentTile - tilesBefore].name}</p>
+                                    <p class="h1">{$athenaClass.subjects[$currentTile - tilesBefore].name}</p>
                                 {/if}
                                 <hr class="my-5">
                                 {#if isAdmin && isEditing}
                                 <textarea class="w-full h-40 p-5 rounded textarea"
-                                          bind:value={$athenaClass.subjects[currentTile - tilesBefore].description}
+                                          bind:value={$athenaClass.subjects[$currentTile - tilesBefore].description}
                                           on:blur={async () => {
                                               if (originalAthenaClass === JSON.stringify($athenaClass)) return;
                                               await updateClass($athenaClass);
@@ -546,15 +615,36 @@
                                           placeholder="Description..."
                                           style="resize: none"></textarea>
                                 {:else}
-                                    <p>{$athenaClass.subjects[currentTile - tilesBefore].description}</p>
+                                    <p>{$athenaClass.subjects[$currentTile - tilesBefore].description}</p>
                                 {/if}
 
                                 <div class="card w-full h-fit mt-5 p-5">
-                                    {#if $athenaClass.subjects[currentTile - tilesBefore].task_uuids.length > 0}
-                                        {#each $athenaClass.subjects[currentTile - tilesBefore].task_uuids as task_uuid}
-                                            <TaskPreview athenaClass={athenaClass} taskUuid={task_uuid}
-                                                         isAdmin={isAdmin} isEditing={isEditing}
-                                                         subject={encodeURIComponent($athenaClass.subjects[currentTile - tilesBefore].name)}/>
+                                    <div class="w-full grid grid-cols-[1fr_auto] mb-5">
+                                        <input class="input rounded" placeholder="Search..."
+                                               bind:value={$searchQuery}>
+                                        <div class="flex m-auto h-full ml-5">
+                                            <label class="flex items-center space-x-2 mx-2">
+                                                <input class="checkbox" type="checkbox" bind:checked={$viewCompleted}/>
+                                                <p>View Completed</p>
+                                            </label>
+                                            <label class="flex items-center space-x-2 mx-2">
+                                                <input class="checkbox" type="checkbox" bind:checked={$viewSeen}/>
+                                                <p>View Seen</p>
+                                            </label>
+                                            <label class="flex items-center space-x-2 mx-2">
+                                                <input class="checkbox" type="checkbox" bind:checked={$viewNew}/>
+                                                <p>View New</p>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {#if $sortedTaskDict.length > 0}
+                                        {#each $taskDictValues as task_uuid}
+                                            {#if $sortedTaskDict.includes(task_uuid)}
+                                                <TaskPreview athenaClass={athenaClass} taskUuid={task_uuid}
+                                                             isAdmin={isAdmin} isEditing={isEditing}
+                                                             subject={encodeURIComponent($athenaClass.subjects[$currentTile - tilesBefore].name)}
+                                                />
+                                            {/if}
                                         {/each}
                                     {:else}
                                         <p class="text-center">no tasks to display</p>

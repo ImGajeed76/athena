@@ -2,13 +2,20 @@
     import '../theme.postcss';
     import '@skeletonlabs/skeleton/styles/skeleton.css';
     import '../app.postcss';
-    import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
-    import { storePopup } from '@skeletonlabs/skeleton';
-    storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
-
+    import {arrow, autoUpdate, computePosition, flip, offset, shift} from '@floating-ui/dom';
+    import {
+        AppBar,
+        Modal,
+        modeCurrent,
+        modeOsPrefers,
+        modeUserPrefers,
+        storePopup,
+        Toast
+    } from '@skeletonlabs/skeleton';
     import {currentSession, signOut} from "$lib/database";
-    import {AppBar, Modal, modeCurrent, modeOsPrefers, modeUserPrefers, Toast} from "@skeletonlabs/skeleton";
     import {onMount} from "svelte";
+
+    storePopup.set({computePosition, autoUpdate, offset, shift, flip, arrow});
 
     const theme: "light" | "dark" = "dark";
 
@@ -28,7 +35,8 @@
             <div class="flex h-full">
                 <a href="/" class="h3">Athena</a>
                 <div class="ml-10 h-full m-auto pt-1">
-                    <a href="/classes" class="hover:underline m-auto">Classes</a>
+                    <a href="/classes" class="hover:underline mx-2">Classes</a>
+                    <a href="/editor" class="hover:underline mx-2">Editor</a>
                 </div>
             </div>
             <svelte:fragment slot="trail">

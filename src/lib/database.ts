@@ -1,8 +1,8 @@
-import type {Session} from "@supabase/supabase-js";
+import type {AuthResponse, Session} from "@supabase/supabase-js";
 import {createClient} from "@supabase/supabase-js";
 import {env} from "$env/dynamic/public";
 import type {Writable} from "svelte/store";
-import {writable} from "svelte/store";
+import {get, writable} from "svelte/store";
 import type {AthenaClass} from "$lib/athenaClass";
 import type {AthenaTask, AthenaTaskAnswer, AthenaTaskData, AthenaTaskProgress} from "$lib/athenaTask";
 import {createEmptyTaskProgress, updateTaskVersion} from "$lib/athenaTask";
@@ -12,19 +12,24 @@ export const supabase = createClient(
     env.PUBLIC_SUPABASE_URL,
     env.PUBLIC_SUPABASE_KEY,
 );
-
-
-export const currentSession: Writable<Session | null> = writable(null);
-let $currentSession: Session | null = null;
-currentSession.subscribe((session) => {
-    $currentSession = session
-});
-export const currentUserData: Writable<any | null> = writable(null);
 supabase.auth.refreshSession().then(() => {
     supabase.auth.onAuthStateChange(async (_, session) => {
         await onAuthStateChange(session);
     });
 });
+
+export const currentSession: Writable<Session | null> = writable(null);
+export const currentUserData: Writable<{ email: string, username: string } | null> = writable(null);
+export const athenaClasses = writable<AthenaClass[]>([]);
+export const athenaTasks = writable<AthenaTask[]>([]);
+export const athenaTaskData = writable<AthenaTaskData[]>([]);
+export const athenaTaskProgress = writable<{
+    progress: AthenaTaskProgress,
+    uuid: string,
+    task_uuid: string,
+    email: string
+}[]>([]);
+
 
 export async function onAuthStateChange(session: Session | null) {
     currentSession.set(session);
@@ -32,6 +37,8 @@ export async function onAuthStateChange(session: Session | null) {
     if (!session) return;
     const classes = await getClasses(session);
     athenaClasses.set(classes);
+
+    await loadTaskData();
 
     const email = session.user.email;
     if (!email) return;
@@ -54,11 +61,11 @@ export async function onAuthStateChange(session: Session | null) {
             return;
         }
 
-        currentUserData.set(tableData);
+        currentUserData.set(tableData[0]);
         return;
     }
 
-    currentUserData.set(data);
+    currentUserData.set(data[0]);
 
 }
 
@@ -66,8 +73,7 @@ export async function signOut() {
     return await supabase.auth.signOut();
 }
 
-
-export async function createUser(email: string, password: string): Promise<{ data: any, error: any }> {
+export async function createUser(email: string, password: string): Promise<AuthResponse> {
     const {data: signUpData, error: signUpError} = await supabase.auth.signUp({
         email,
         password,
@@ -75,19 +81,13 @@ export async function createUser(email: string, password: string): Promise<{ dat
             emailRedirectTo: window.location.origin
         }
     });
-    if (signUpError) return {data: null, error: signUpError};
+    if (signUpError) return {data: {user: null, session: null}, error: signUpError};
 
     return {data: signUpData, error: null};
 }
 
-export const athenaClasses = writable<AthenaClass[]>([]);
-let $athenaClasses: AthenaClass[] = [];
-athenaClasses.subscribe((classes) => {
-    $athenaClasses = classes;
-});
-
 export async function getClasses(session: Session | null = null): Promise<AthenaClass[]> {
-    if (!session && $currentSession) session = $currentSession;
+    if (!session && get(currentSession)) session = get(currentSession);
     if (!session) return [];
 
     const {data, error} = await supabase
@@ -103,8 +103,9 @@ export async function getClasses(session: Session | null = null): Promise<Athena
 }
 
 export async function updateClass(classData: AthenaClass) {
-    if (!$currentSession) return false;
-    if (!$currentSession.user.email) return false;
+    const session = get(currentSession);
+    if (!session) return false;
+    if (!session.user.email) return false;
 
     const {error} = await supabase
         .from("classes")
@@ -128,8 +129,9 @@ export async function updateClass(classData: AthenaClass) {
 }
 
 export async function deleteClass(athenaClass: AthenaClass) {
-    if (!$currentSession) return false;
-    if (!$currentSession.user.email) return false;
+    const session = get(currentSession);
+    if (!session) return false;
+    if (!session.user.email) return false;
 
     for (const subject in athenaClass.subjects) {
         for (const task_uuid of athenaClass.subjects[subject].task_uuids) {
@@ -152,16 +154,17 @@ export async function deleteClass(athenaClass: AthenaClass) {
 }
 
 export async function createClass(name: string, description: string) {
-    if (!$currentSession) return;
-    if (!$currentSession.user.email) return;
-    console.log(name, description, $currentSession.user.email)
+    const session = get(currentSession);
+    if (!session) return false;
+    if (!session.user.email) return false;
+    console.log(name, description, session.user.email)
 
     const classData: AthenaClass = {
         uuid: "",
         name,
         description,
-        admins: [$currentSession.user.email],
-        users: [$currentSession.user.email],
+        admins: [session.user.email],
+        users: [session.user.email],
         banner: await getRandomUnsplashImage(["landscape", "mountain"]),
         subjects: [],
     }
@@ -189,37 +192,56 @@ export async function createClass(name: string, description: string) {
     console.log(data);
 }
 
-export async function getTask(taskUuid: string): Promise<AthenaTask | null> {
-    const data = await getTaskData(taskUuid);
-    if (!data) return null;
-    return updateTaskVersion(data.task);
-}
+export async function loadTaskData() {
+    const session = get(currentSession);
+    if (!session) return;
+    if (!session.user.email) return;
 
-export async function getTaskData(taskUuid: string): Promise<AthenaTaskData | null> {
-    if (!$currentSession) return null;
-    if (!$currentSession.user.email) return null;
-
-    const {data, error} = await supabase
+    const {data: taskData, error} = await supabase
         .from("tasks")
-        .select()
-        .eq("uuid", taskUuid);
+        .select();
 
     if (error) {
         console.error(error);
-        return null;
+        return;
     }
 
-    if (data.length === 0) return null;
+    athenaTaskData.set(taskData);
 
-    return data[0];
+    const tasks: AthenaTask[] = [];
+    for (const task of taskData) {
+        tasks.push(updateTaskVersion(task.task));
+    }
+    athenaTasks.set(tasks);
+
+    const {data: progressData, error: progressError} = await supabase
+        .from("task_progress")
+        .select();
+
+    if (progressError) {
+        console.error(progressError);
+        return;
+    }
+
+    athenaTaskProgress.set(progressData);
+    console.log(taskData);
+}
+
+export async function getTask(taskUuid: string): Promise<AthenaTask | null> {
+    return get(athenaTasks).find(task => task.uuid === taskUuid) || null;
+}
+
+export async function getTaskData(taskUuid: string): Promise<AthenaTaskData | null> {
+    return get(athenaTaskData).find(task => task.uuid === taskUuid) || null;
 }
 
 export async function createTask(task: AthenaTask, admins: string[] = [], users: string[] = []): Promise<AthenaTask | null> {
-    if (!$currentSession) return null;
-    if (!$currentSession.user.email) return null;
+    const session = get(currentSession);
+    if (!session) return null;
+    if (!session.user.email) return null;
 
-    if (!admins.includes($currentSession.user.email)) admins.push($currentSession.user.email);
-    if (!users.includes($currentSession.user.email)) users.push($currentSession.user.email);
+    if (!admins.includes(session.user.email)) admins.push(session.user.email);
+    if (!users.includes(session.user.email)) users.push(session.user.email);
 
     const {data, error} = await supabase
         .from("tasks")
@@ -236,14 +258,16 @@ export async function createTask(task: AthenaTask, admins: string[] = [], users:
         return null;
     }
 
+    await loadTaskData();
     return data[0].task;
 }
 
 export async function updateTask(task: AthenaTask): Promise<AthenaTask | null> {
-    if (!$currentSession) return null;
-    if (!$currentSession.user.email) return null;
+    const session = get(currentSession);
+    if (!session) return null;
+    if (!session.user.email) return null;
 
-    const {data, error} = await supabase
+    const {error} = await supabase
         .from("tasks")
         .update({
             task,
@@ -256,12 +280,14 @@ export async function updateTask(task: AthenaTask): Promise<AthenaTask | null> {
         return null;
     }
 
+    await loadTaskData();
     return task;
 }
 
 export async function deleteTask(taskUuid: string): Promise<boolean> {
-    if (!$currentSession) return false;
-    if (!$currentSession.user.email) return false;
+    const session = get(currentSession);
+    if (!session) return false;
+    if (!session.user.email) return false;
 
     const {error} = await supabase
         .from("tasks")
@@ -273,12 +299,14 @@ export async function deleteTask(taskUuid: string): Promise<boolean> {
         return false;
     }
 
+    await loadTaskData();
     return true;
 }
 
 export async function updateTaskAdmins(taskUuid: string, adminEmails: string[], operation: "append" | "remove" | "set"): Promise<AthenaTask | null> {
-    if (!$currentSession) return null;
-    if (!$currentSession.user.email) return null;
+    const session = get(currentSession);
+    if (!session) return null;
+    if (!session.user.email) return null;
 
     const {data: currentData, error: currentError} = await supabase
         .from("tasks")
@@ -291,7 +319,7 @@ export async function updateTaskAdmins(taskUuid: string, adminEmails: string[], 
     }
 
     const currentAdmins = currentData[0].admins;
-    if (!currentAdmins.includes($currentSession.user.email)) return null;
+    if (!currentAdmins.includes(session.user.email)) return null;
 
     if (operation === "append") {
         for (const adminEmail of adminEmails) {
@@ -299,11 +327,11 @@ export async function updateTaskAdmins(taskUuid: string, adminEmails: string[], 
         }
     } else if (operation === "remove") {
         for (const adminEmail of adminEmails) {
-            if (currentAdmins.includes(adminEmail) && adminEmail !== $currentSession.user.email) currentAdmins.splice(currentAdmins.indexOf(adminEmail), 1);
+            if (currentAdmins.includes(adminEmail) && adminEmail !== session.user.email) currentAdmins.splice(currentAdmins.indexOf(adminEmail), 1);
         }
     } else if (operation === "set") {
         for (const adminEmail of adminEmails) {
-            if (currentAdmins.includes(adminEmail) && adminEmail !== $currentSession.user.email) currentAdmins.splice(currentAdmins.indexOf(adminEmail), 1);
+            if (currentAdmins.includes(adminEmail) && adminEmail !== session.user.email) currentAdmins.splice(currentAdmins.indexOf(adminEmail), 1);
         }
         for (const adminEmail of adminEmails) {
             if (!currentAdmins.includes(adminEmail)) currentAdmins.push(adminEmail);
@@ -323,12 +351,14 @@ export async function updateTaskAdmins(taskUuid: string, adminEmails: string[], 
         return null;
     }
 
+    await loadTaskData();
     return data[0].task;
 }
 
 export async function updateTaskUsers(taskUuid: string, userEmails: string[], operation: "append" | "remove" | "set"): Promise<AthenaTask | null> {
-    if (!$currentSession) return null;
-    if (!$currentSession.user.email) return null;
+    const session = get(currentSession);
+    if (!session) return null;
+    if (!session.user.email) return null;
 
     const {data: currentData, error: currentError} = await supabase
         .from("tasks")
@@ -342,7 +372,7 @@ export async function updateTaskUsers(taskUuid: string, userEmails: string[], op
 
     const currentUsers = currentData[0].users;
     const currentAdmins = currentData[0].admins;
-    if (!currentUsers.includes($currentSession.user.email)) return null;
+    if (!currentUsers.includes(session.user.email)) return null;
 
     if (operation === "append") {
         for (const userEmail of userEmails) {
@@ -374,29 +404,23 @@ export async function updateTaskUsers(taskUuid: string, userEmails: string[], op
         return null;
     }
 
+    await loadTaskData();
     return data[0].task;
 }
 
 export async function getTaskProgress(taskUuid: string, answer: AthenaTaskAnswer): Promise<AthenaTaskProgress | null> {
-    if (!$currentSession) return null;
-    if (!$currentSession.user.email) return null;
+    const session = get(currentSession);
+    if (!session) return null;
+    if (!session.user.email) return null;
 
-    const {data, error} = await supabase
-        .from("task_progress")
-        .select()
-        .eq("task_uuid", taskUuid)
+    const progress = get(athenaTaskProgress).find(progress => progress.task_uuid === taskUuid && progress.email === session.user.email);
 
-    if (error) {
-        console.error(error);
-        return null;
-    }
-
-    if (data.length === 0) {
+    if (!progress) {
         const {data: newData, error: newError} = await supabase
             .from("task_progress")
             .insert({
                 task_uuid: taskUuid,
-                email: $currentSession.user.email,
+                email: session.user.email,
                 progress: createEmptyTaskProgress(taskUuid, answer),
             })
             .select()
@@ -406,15 +430,17 @@ export async function getTaskProgress(taskUuid: string, answer: AthenaTaskAnswer
             return null;
         }
 
+        await loadTaskData();
         return newData[0].progress;
     }
 
-    return data[0].progress;
+    return progress.progress;
 }
 
 export async function updateTaskProgress(taskUuid: string, progress: AthenaTaskProgress): Promise<AthenaTaskProgress | null> {
-    if (!$currentSession) return null;
-    if (!$currentSession.user.email) return null;
+    const session = get(currentSession);
+    if (!session) return null;
+    if (!session.user.email) return null;
 
     const {data, error} = await supabase
         .from("task_progress")
@@ -429,5 +455,6 @@ export async function updateTaskProgress(taskUuid: string, progress: AthenaTaskP
         return null;
     }
 
+    await loadTaskData();
     return data[0].progress;
 }
