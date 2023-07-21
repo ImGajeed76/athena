@@ -2,7 +2,7 @@
     import {page} from "$app/stores";
     import {writable} from "svelte/store";
     import type {AthenaTask, AthenaTaskProgress} from "$lib/athenaTask";
-    import {onMount} from "svelte";
+    import {onDestroy, onMount} from "svelte";
     import {athenaClasses, getTask, getTaskProgress, updateTaskProgress} from "$lib/database";
     import Task_Viewer from "../../../../../../modules/Task_Viewer.svelte";
     import {goto} from "$app/navigation";
@@ -59,8 +59,20 @@
         startTimeInMills = Date.now();
         $user_progress.solve_time += timeElapsed;
         await updateTaskProgress($user_progress.uuid, $user_progress);
+        clearInterval(timeUpdater);
         await goto(`/classes/${uuid}`);
     }
+
+    onDestroy(async () => {
+        clearInterval(timeUpdater);
+
+        if (!$user_progress) return;
+        if ($user_progress.completed) return;
+        let timeElapsed = Date.now() - startTimeInMills;
+        startTimeInMills = Date.now();
+        $user_progress.solve_time += timeElapsed;
+        await updateTaskProgress($user_progress.uuid, $user_progress);
+    })
 </script>
 
 {#if $task}

@@ -142,7 +142,6 @@
         const content = writable($task.explanation.steps[$task.explanation.steps.length - 1].content);
         content.subscribe(value => {
             $task.explanation.steps[$task.explanation.steps.length - 1].content = value;
-            console.log($task.explanation.steps[$task.explanation.steps.length - 1].content);
         })
 
         stepContents.push(content);
@@ -159,10 +158,17 @@
 
     function removeStep(title) {
         let index = $task.explanation.steps.findIndex(step => step.title === title);
+        if (index === -1) return;
         stepContents.splice(index, 1);
         $task.explanation.steps = $task.explanation.steps.filter(step => step.title !== title);
         oldTask = JSON.stringify($task);
         task.set($task);
+
+        if (index < $task.explanation.steps.length) return;
+        reloadStepper = true;
+        setTimeout(() => {
+            reloadStepper = false;
+        }, 10);
     }
 
     function getURL(src) {
@@ -215,6 +221,8 @@
     async function importTask() {
         await upload();
     }
+
+    let reloadStepper = false;
 </script>
 
 <Toast/>
@@ -378,83 +386,86 @@
         <div class="card w-full max-w-6xl h-full m-auto my-5 p-5">
             <p class="h2 mb-10">Explanation:</p>
             <div>
-                <Stepper buttonComplete="variant-filled" buttonCompleteLabel="Next →">
-                    {#each $task.explanation.steps as step, i}
-                        <Step locked={i === $task.explanation.steps.length - 1}>
-                            <svelte:fragment slot="header">
-                                <p></p>
-                            </svelte:fragment>
-                            <input class="input rounded-md outline-0 p-2 text-2xl" bind:value={step.title}
-                                   placeholder="Step 1">
+                {#if !reloadStepper}
+                    <Stepper buttonComplete="variant-filled" buttonCompleteLabel="Next →">
+                        {#each $task.explanation.steps as step, i}
+                            <Step locked={i === $task.explanation.steps.length - 1}>
+                                <svelte:fragment slot="header">
+                                    <p></p>
+                                </svelte:fragment>
+                                <input class="input rounded-md outline-0 p-2 text-2xl" bind:value={step.title}
+                                       placeholder="Step 1">
 
-                            <div class="grid grid-cols-2">
-                                <div class="h-96">
-                                    <LaTeX_Editor content={stepContents[i]}/>
+                                <div class="grid grid-cols-2">
+                                    <div class="h-96">
+                                        <LaTeX_Editor content={stepContents[i]}/>
+                                    </div>
+
+                                    <div class="px-2">
+                                        <label class="label mb-5">
+                                            <select class="select" bind:value={step.extra.type}>
+                                                <option value="image">Image</option>
+                                                <option value="video">Video</option>
+                                                <option value="audio">Audio</option>
+                                                <option value="simulation">Simulation</option>
+                                            </select>
+                                        </label>
+
+                                        {#if step.extra.type === "image"}
+                                            <div>
+                                                <input class="input variant-form-material outline-0 p-1"
+                                                       placeholder="Image URL"
+                                                       bind:value={step.extra.src}>
+
+                                                <div class="bg-cover rounded bg-center w-full h-80 mt-3"
+                                                     style="background-image: {getURL(step.extra.src || 'robert-shunev-mS1nlYbq1kA-unsplash.jpg')}">
+                                                </div>
+
+
+                                            </div>
+                                        {:else if step.extra.type === "video"}
+                                            <div>
+                                                <input class="input variant-form-material outline-0 p-1"
+                                                       placeholder="Video URL"
+                                                       bind:value={step.extra.src}>
+
+                                                <div class="w-full h-80 mt-3 rounded overflow-hidden">
+                                                    <VideoPlayer
+                                                            src={step.extra.src || "pexels-akari-m-5927778 (1080p).mp4"}
+                                                            alt="Your Video"/>
+                                                </div>
+                                            </div>
+                                        {:else if step.extra.type === "audio"}
+                                            <div>
+                                                <input class="input variant-form-material outline-0 p-1"
+                                                       placeholder="Audio URL"
+                                                       bind:value={step.extra.src}>
+
+                                                <div class="w-full h-80 mt-3 rounded overflow-hidden">
+                                                    <AudioPlayer src={step.extra.src || "spirit-blossom-15285.mp3"}
+                                                                 alt="Your Audio"/>
+                                                </div>
+                                            </div>
+                                        {:else if step.extra.type === "simulation"}
+                                            <div>
+                                                <p class="text-center">Not implemented yet</p>
+                                            </div>
+                                        {/if}
+                                    </div>
                                 </div>
 
-                                <div class="px-2">
-                                    <label class="label mb-5">
-                                        <select class="select" bind:value={step.extra.type}>
-                                            <option value="image">Image</option>
-                                            <option value="video">Video</option>
-                                            <option value="audio">Audio</option>
-                                            <option value="simulation">Simulation</option>
-                                        </select>
-                                    </label>
-
-                                    {#if step.extra.type === "image"}
-                                        <div>
-                                            <input class="input variant-form-material outline-0 p-1"
-                                                   placeholder="Image URL"
-                                                   bind:value={step.extra.src}>
-
-                                            <div class="bg-cover rounded bg-center w-full h-80 mt-3"
-                                                 style="background-image: {getURL(step.extra.src || 'robert-shunev-mS1nlYbq1kA-unsplash.jpg')}">
-                                            </div>
-
-
-                                        </div>
-                                    {:else if step.extra.type === "video"}
-                                        <div>
-                                            <input class="input variant-form-material outline-0 p-1"
-                                                   placeholder="Video URL"
-                                                   bind:value={step.extra.src}>
-
-                                            <div class="w-full h-80 mt-3 rounded overflow-hidden">
-                                                <VideoPlayer
-                                                        src={step.extra.src || "pexels-akari-m-5927778 (1080p).mp4"}
-                                                        alt="Your Video"/>
-                                            </div>
-                                        </div>
-                                    {:else if step.extra.type === "audio"}
-                                        <div>
-                                            <input class="input variant-form-material outline-0 p-1"
-                                                   placeholder="Audio URL"
-                                                   bind:value={step.extra.src}>
-
-                                            <div class="w-full h-80 mt-3 rounded overflow-hidden">
-                                                <AudioPlayer src={step.extra.src || "spirit-blossom-15285.mp3"}
-                                                             alt="Your Audio"/>
-                                            </div>
-                                        </div>
-                                    {:else if step.extra.type === "simulation"}
-                                        <div>
-                                            <p class="text-center">Not implemented yet</p>
-                                        </div>
-                                    {/if}
+                                <div class="flex justify-between pt-10">
+                                    <button class="btn rounded variant-glass-error"
+                                            on:click={() => {removeStep(step.title)}}>Remove Step
+                                    </button>
+                                    <button class="btn rounded variant-filled-primary" on:click={addExplanation}>Add
+                                        Step
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div class="flex justify-between pt-10">
-                                <button class="btn rounded variant-glass-error"
-                                        on:click={() => {removeStep(step.title)}}>Remove Step
-                                </button>
-                                <button class="btn rounded variant-filled-primary" on:click={addExplanation}>Add Step
-                                </button>
-                            </div>
-                        </Step>
-                    {/each}
-                </Stepper>
+                            </Step>
+                        {/each}
+                    </Stepper>
+                {/if}
             </div>
         </div>
     {/if}

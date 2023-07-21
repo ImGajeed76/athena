@@ -1,6 +1,6 @@
 <script lang="ts">
     import {page} from "$app/stores";
-    import {onMount} from "svelte";
+    import {onDestroy, onMount} from "svelte";
     import {athenaClasses, getTask, updateTask} from "$lib/database";
     import type {AthenaTask} from "$lib/athenaTask";
     import Task_Editor from "../../../../../../modules/Task_Editor.svelte";
@@ -24,9 +24,15 @@
         loading = false;
     })
 
+    let saveEvent = null;
+
     onMount(async () => {
-        // add Ctrl+S shortcut
-        window.addEventListener("keydown", async (e) => {
+        saveEvent =  async (e) => {
+            if ($page.route.id !== "/classes/[uuid]/[subject]/edit/[task_uuid]") {
+                window.removeEventListener("keydown", saveEvent);
+                return;
+            }
+
             if (e.ctrlKey && e.key === "s") {
                 e.preventDefault();
                 if (await saveTask()) {
@@ -43,13 +49,19 @@
                     })
                 }
             }
-        });
+        }
+
+        window.addEventListener("keydown", saveEvent);
 
         const athenaTask = await getTask(taskUuid);
         if (!athenaTask) return;
         $task = athenaTask;
         loading = false;
     })
+
+    onDestroy(() => {
+        saveTask();
+    });
 
     async function saveTask() {
         if (!$task) return;

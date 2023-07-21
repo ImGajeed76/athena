@@ -81,7 +81,7 @@
 
 {#if originalTask}
     {#if isAdmin && isEditing}
-        <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200"
+        <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200 mb-5"
              style="cursor: pointer">
             <div class="flex justify-between">
                 <p class="text-xl">{originalTask.title}</p>
@@ -97,7 +97,7 @@
             </div>
         </div>
     {:else}
-        <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200" style="cursor: pointer"
+        <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200 mb-5" style="cursor: pointer"
              on:click={goto(`/classes/${$page.params.uuid}/${subject}/view/${taskUuid}`)}
              on:keydown={()=>{/**/}}
         >
