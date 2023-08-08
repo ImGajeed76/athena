@@ -2,6 +2,7 @@
     import type {Writable} from "svelte/store";
     import {supabase} from "$lib/database";
     import {goto} from "$app/navigation";
+    import {ProgressBar} from "@skeletonlabs/skeleton";
 
     export let selected: Writable<number>;
     let info: {
@@ -15,7 +16,11 @@
     let email = "";
     let password = "";
 
+    let loading = false;
+
     async function login() {
+        loading = true;
+
         info.text = "";
 
         const {error} = await supabase.auth.signInWithPassword({
@@ -39,6 +44,8 @@
                 goto("/")
             }, 1000);
         }
+
+        loading = false;
     }
 </script>
 
@@ -66,6 +73,9 @@
                 on:click={login}>
             Login
         </button>
+        {#if loading}
+            <ProgressBar value={undefined} class="mt-1" meter="bg-primary-500"/>
+        {/if}
 
         <p class="{info.color} text-center">
             {info.text}

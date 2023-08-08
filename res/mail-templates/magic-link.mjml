@@ -1,0 +1,22 @@
+<mjml>
+    <mj-body>
+        <mj-section background-color="#373755" full-width="full-width">
+            <mj-column>
+                <mj-text align="center" color="#ffffff" font-size="20px" font-weight="bold" font-family="helvetica">
+                    <p>Your Magic Link 🪄</p>
+                </mj-text>
+
+                <mj-divider border-color="#53537f"></mj-divider>
+
+                <mj-text align="center" color="#ffffff" font-size="16px" font-family="helvetica">
+                    <p>Follow this magic link to login:</p>
+                </mj-text>
+
+                <mj-button background-color="#ffffff" color="#373755" font-size="16px" font-weight="bold"
+                           font-family="helvetica" href="{{ .ConfirmationURL }}">
+                    Login
+                </mj-button>
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>

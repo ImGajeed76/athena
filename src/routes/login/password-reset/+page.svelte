@@ -2,12 +2,15 @@
     import {currentSession, supabase} from "$lib/database";
     import {goto} from "$app/navigation";
     import {onMount} from "svelte";
+    import {ProgressBar} from "@skeletonlabs/skeleton";
 
     let email = "";
     let info = {
         color: "text-success-500",
         text: ""
     }
+
+    let loading = false;
 
     async function isEmailValid() {
         let regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -20,6 +23,7 @@
 
     async function sendResetLink() {
         if (!await isEmailValid()) return;
+        loading = true;
 
         const {error} = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: window.location.origin + "/login/update-password"
@@ -32,6 +36,7 @@
             info.color = "text-success-500";
             info.text = "Reset link send successfully";
         }
+        loading = false;
     }
 
     onMount(() => {
@@ -55,15 +60,14 @@
                         Send reset link
                     </button>
                 </div>
+                {#if loading}
+                    <ProgressBar value={undefined} class="mb-3" meter="bg-primary-500"/>
+                {/if}
 
                 <p class="{info.color} text-center mb-4">
                     {info.text}
                 </p>
             </form>
-        </div>
-
-        <div class="mt-20">
-            <img class="m-auto rounded-md shadow-2xl" src="https://i.giphy.com/media/9QpWnH4AWv6xKvSX7T/giphy.webp" alt="">
         </div>
     </div>
 </div>

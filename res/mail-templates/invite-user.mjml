@@ -1,0 +1,22 @@
+<mjml>
+    <mj-body>
+        <mj-section background-color="#373755" full-width="full-width">
+            <mj-column>
+                <mj-text align="center" color="#ffffff" font-size="20px" font-weight="bold" font-family="helvetica">
+                    <p>You have been invited!</p>
+                </mj-text>
+
+                <mj-divider border-color="#53537f"></mj-divider>
+
+                <mj-text align="center" color="#ffffff" font-size="16px" font-family="helvetica">
+                    <p>You have been invited to Athena! Follow this link to accept the invite:</p>
+                </mj-text>
+
+                <mj-button background-color="#ffffff" color="#373755" font-size="16px" font-weight="bold"
+                           font-family="helvetica" href="{{ .ConfirmationURL }}">
+                    Accept the invite
+                </mj-button>
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>

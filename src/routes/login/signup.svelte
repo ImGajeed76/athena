@@ -2,6 +2,7 @@
     import type {Writable} from "svelte/store";
     import {createUser} from "$lib/database";
     import {validateEmail} from "$lib/utils";
+    import {ProgressBar} from "@skeletonlabs/skeleton";
 
     export let selected: Writable<number>;
     let info: {
@@ -15,6 +16,8 @@
     let email = "";
     let password = "";
     let confirmPassword = "";
+
+    let loading = false;
 
     async function isEmailValid() {
         const isValid = validateEmail(email);
@@ -47,6 +50,8 @@
         if (!await isEmailValid()) return;
         if (!await isPasswordValid()) return;
 
+        loading = true;
+
         const {error} = await createUser(email, password);
 
         if (error) {
@@ -61,6 +66,8 @@
                 selected.set(1);
             }, 1000);
         }
+
+        loading = false;
     }
 </script>
 
@@ -90,6 +97,9 @@
                 on:click={signUp}>
             Sign Up
         </button>
+        {#if loading}
+            <ProgressBar value={undefined} class="mt-1" meter="bg-primary-500"/>
+        {/if}
 
         <p class="{info.color} text-center">
             {info.text}

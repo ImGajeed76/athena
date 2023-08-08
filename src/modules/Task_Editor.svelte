@@ -9,6 +9,7 @@
     import AudioPlayer from "./players/AudioPlayer.svelte";
     import {onMount} from "svelte";
     import {download} from "$lib/utils";
+    import Simulation_Viewer from "./Simulation_Viewer.svelte";
 
     let variableName = '';
     let variableCorrectValue = '';
@@ -157,7 +158,7 @@
         }, 100);
     }
 
-    function removeStep(title) {
+    function removeStep(title: string) {
         let index = $task.explanation.steps.findIndex(step => step.title === title);
         if (index === -1) return;
         stepContents.splice(index, 1);
@@ -172,7 +173,7 @@
         }, 10);
     }
 
-    function getURL(src) {
+    function getURL(src: string) {
         return `url(${src})`;
     }
 
@@ -181,11 +182,12 @@
         input.type = 'file';
         input.accept = '.athena';
         input.onchange = e => {
-            if (!e.target.files || e.target.files.length === 0) return;
+            if (!e.target ||!e.target.files || e.target.files.length === 0) return;
             const file = e.target.files[0];
             const reader = new FileReader();
             reader.readAsText(file, "UTF-8");
             reader.onload = readerEvent => {
+                if (!readerEvent.target) return;
                 const fileContent = readerEvent.target.result;
                 if (typeof fileContent === "string") {
                     const newTask = parseTask(fileContent);
@@ -231,11 +233,10 @@
                     </div>
                     <label class="label mt-14 mb-5">
                         <span>Answer Type</span>
-                        <select class="select" bind:value={$task.answer.type}>
+                        <select class="select" bind:value={$task.answer.type} on:change={() => {if ($task.answer.type === "simulation") $task.extra.type = "simulation"}}>
                             <option value="text">Text</option>
                             <option value="variables">Variables</option>
                             <option value="multiple_choice">Multiple Choice</option>
-                            <option value="simulation">Simulation</option>
                         </select>
                     </label>
 
@@ -323,14 +324,13 @@
                     </button>
                 </div>
             </div>
-            <div class="bg-surface-700 rounded p-5 overflow-y-auto">
+            <div class="bg-surface-700 rounded p-5 overflow-y-auto grid grid-rows-[auto_1fr]">
                 <label class="label mb-5">
                     <span>Reference Type</span>
-                    <select class="select" bind:value={$task.extra.type}>
+                    <select class="select" bind:value={$task.extra.type} on:change={() => {if ($task.answer.type === "simulation" && $task.extra.type !== "simulation") $task.extra.type = "simulation"}}>
                         <option value="image">Image</option>
                         <option value="video">Video</option>
                         <option value="audio">Audio</option>
-                        <option value="simulation">Simulation</option>
                     </select>
                 </label>
 
@@ -362,8 +362,8 @@
                         </div>
                     </div>
                 {:else if $task.extra.type === "simulation"}
-                    <div>
-                        <p class="text-center">Not implemented yet</p>
+                    <div class="w-full h-full">
+                        <Simulation_Viewer athenaSimulation={$task.simulation}/>
                     </div>
                 {/if}
             </div>
@@ -395,7 +395,6 @@
                                                 <option value="image">Image</option>
                                                 <option value="video">Video</option>
                                                 <option value="audio">Audio</option>
-                                                <option value="simulation">Simulation</option>
                                             </select>
                                         </label>
 

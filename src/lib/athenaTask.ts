@@ -1,4 +1,5 @@
 import {generateUUID} from "$lib/utils";
+import type {Engine, Render} from "matter-js";
 
 export type AthenaTaskAnswer = {
     type: 'text',
@@ -50,6 +51,15 @@ export type AthenaTaskExplanation = {
     }[]
 }
 
+export type AthenaTaskSimulation = {
+    variables: {
+        name: string,
+        value: string,
+    }[],
+    engine: Engine | null,
+    renderer: Render | null,
+}
+
 export type AthenaTask = {
     structVersion: number,
     uuid: string,
@@ -58,6 +68,7 @@ export type AthenaTask = {
     answer: AthenaTaskAnswer,
     extra: AthenaTaskExtra,
     explanation: AthenaTaskExplanation,
+    simulation: AthenaTaskSimulation,
 }
 
 export type AthenaTaskProgress = {
@@ -76,7 +87,7 @@ export type AthenaTaskData = {
 }
 
 export const createEmptyTask = (): AthenaTask => ({
-    structVersion: 1,
+    structVersion: 2,
     uuid: generateUUID(),
     title: '',
     content: {},
@@ -92,7 +103,12 @@ export const createEmptyTask = (): AthenaTask => ({
     },
     explanation: {
         steps: [],
-    }
+    },
+    simulation: {
+        variables: [],
+        engine: null,
+        renderer: null,
+    },
 });
 
 export const createEmptyTaskProgress = (uuid: string, answer: AthenaTaskAnswer): AthenaTaskProgress => ({
@@ -110,12 +126,20 @@ export const parseTask = (text: string): AthenaTask => {
 
 export const updateTaskVersion = (task: AthenaTask): AthenaTask => {
     if (task.structVersion === undefined) {
-        task.structVersion = 1;
+        task.structVersion = 2;
     }
 
     switch (task.structVersion) {
         case 1:
-            return task as AthenaTask;
+            task.simulation = {
+                variables: [],
+                engine: null,
+                renderer: null,
+            };
+            task.structVersion = 2;
+            return updateTaskVersion(task);
+        case 2:
+            return task;
         default:
             throw new Error(`Unknown task struct version: ${task.structVersion}`);
     }

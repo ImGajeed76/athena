@@ -76,25 +76,33 @@
 <Modal/>
 
 {#if originalTask}
-    {#if isAdmin && isEditing}
+    {#if isAdmin}
         <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200 mb-5"
              style="cursor: pointer">
             <div class="flex justify-between">
                 <p class="text-xl">{originalTask.title}</p>
             </div>
             <div class="flex justify-between mt-1">
-                <div class="flex">
-                    <button class="chip variant-filled-primary mr-2"
-                            on:click={goto(`/classes/${$page.params.uuid}/${subject}/edit/${taskUuid}`)}>Edit
-                    </button>
+                <div class="flex space-x-2">
                     <button class="chip variant-glass-error" on:click={deleteAthenaTask}>Delete</button>
                 </div>
-                <button class="chip variant-glass hover:variant-filled-warning" on:click={openVisibility}>Visibility</button>
+                <div class="flex space-x-2">
+                    <button class="chip variant-glass hover:variant-filled-warning" on:click={openVisibility}>
+                        Visibility
+                    </button>
+                    <button class="chip variant-glass hover:variant-filled-success"
+                            on:click={() => {goto(`/classes/${$page.params.uuid}/${subject}/view/${taskUuid}`)}}>View
+                    </button>
+                    <button class="chip variant-filled-primary"
+                            on:click={() => {goto(`/classes/${$page.params.uuid}/${subject}/edit/${taskUuid}`)}}>Edit
+                    </button>
+                </div>
             </div>
         </div>
     {:else}
-        <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200 mb-5" style="cursor: pointer"
-             on:click={goto(`/classes/${$page.params.uuid}/${subject}/view/${taskUuid}`)}
+        <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200 mb-5"
+             style="cursor: pointer"
+             on:click={() => {goto(`/classes/${$page.params.uuid}/${subject}/view/${taskUuid}`)}}
              on:keydown={()=>{/**/}}
         >
             <div class="flex justify-between">
