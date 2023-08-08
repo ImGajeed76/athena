@@ -58,10 +58,11 @@
     </div>
     {#if tabSet === 0}
         <Task_Editor task={task}/>
+
+        <div class="w-full flex justify-around">
+            <button class="btn variant-glass-success rounded" on:click={saveTask}>Save Task</button>
+        </div>
     {:else if tabSet === 1}
         <Task_Viewer task={task}/>
     {/if}
-    <div class="w-full flex justify-around">
-        <button class="btn variant-glass-success rounded" on:click={saveTask}>Save Task</button>
-    </div>
 </div>
