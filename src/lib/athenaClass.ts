@@ -4,6 +4,7 @@ export type AthenaClass = {
     description: string,
     admins: string[],
     users: string[],
+    creators: string[],
     banner: string,
     subjects: AthenaSubjects[],
 }

@@ -25,7 +25,9 @@
 
     const cssBackground = writable("")
     page.subscribe((page) => {
-        if (page.url.pathname === "/") {
+        if (
+            page.url.pathname === "/"
+        ) {
             cssBackground.set(homePageBackground);
         } else {
             cssBackground.set("");
@@ -43,7 +45,7 @@
 <Modal/>
 
 <div class="w-full h-full grid grid-rows-[auto_1fr]">
-    <div class="shadow z-20 w-full bg-surface-800" style="position: sticky; top: 0;">
+    <div class="shadow z-50 w-full bg-surface-800" style="position: sticky; top: 0;">
         <AppBar slotTrail="place-content-end" background={$cssBackground}>
             <div class="flex h-full">
                 <a href="/" class="h3">Athena</a>

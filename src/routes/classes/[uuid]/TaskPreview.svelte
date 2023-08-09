@@ -3,7 +3,15 @@
     import type {Writable} from "svelte/store";
     import {writable} from "svelte/store";
     import {onMount} from "svelte";
-    import {deleteTask, getTask, getTaskData, getTaskProgress, updateClass, updateTaskUsers} from "$lib/database";
+    import {
+        currentSession,
+        deleteTask,
+        getTask,
+        getTaskData,
+        getTaskProgress,
+        updateClass,
+        updateTaskUsers
+    } from "$lib/database";
     import {millsToTimeFormat} from "$lib/utils";
     import {goto} from "$app/navigation";
     import {page} from "$app/stores";
@@ -12,16 +20,20 @@
     import {Modal, modalStore, SlideToggle} from "@skeletonlabs/skeleton";
     import VisibilityModal from "./VisibilityModal.svelte";
 
-    export let athenaClass: Writable<AthenaClass>;
+    export let athenaClass: Writable<AthenaClass | undefined>;
     export let taskUuid: string;
     export let subject: string;
     export let isAdmin: boolean;
-    export let isEditing: boolean;
+    export let isCreator: boolean;
+
+    let isTaskAdmin = false;
 
     let userProgress = writable<AthenaTaskProgress>();
     let originalTask: AthenaTask;
 
     onMount(async () => {
+        if (!$athenaClass) throw new Error("No class provided");
+
         const taskData = await getTaskData(taskUuid);
         if (!taskData) {
             console.error(`No task found for [${subject}] with uuid [${taskUuid}]. Removing from subject.`);
@@ -35,6 +47,9 @@
         const progress = await getTaskProgress(taskUuid, originalTask.answer);
         if (!progress) throw new Error(`No progress found for [${subject}] with uuid [${taskUuid}]`);
         userProgress.set(progress)
+
+        if (!$currentSession) return;
+        isTaskAdmin = taskData.admins.includes($currentSession.user.email ?? "");
     })
 
     async function deleteAthenaTask() {
@@ -45,6 +60,7 @@
             valueAttr: {type: "text", placeholder: "Task title", required: true},
             response: async (r: string) => {
                 if (r === originalTask.title) {
+                    if (!$athenaClass) throw new Error("No class provided");
                     const subjectIndex = $athenaClass.subjects.findIndex(s => s.name === subject);
                     $athenaClass.subjects[subjectIndex].task_uuids = $athenaClass.subjects[subjectIndex].task_uuids.filter(t => t !== taskUuid);
                     await updateClass($athenaClass);
@@ -76,7 +92,7 @@
 <Modal/>
 
 {#if originalTask}
-    {#if isAdmin}
+    {#if isTaskAdmin && (isAdmin || isCreator)}
         <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200 mb-5"
              style="cursor: pointer">
             <div class="flex justify-between">

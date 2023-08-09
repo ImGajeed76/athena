@@ -102,7 +102,8 @@ export async function getClasses(session: Session | null = null): Promise<Athena
     return data as AthenaClass[];
 }
 
-export async function updateClass(classData: AthenaClass) {
+export async function updateClass(classData: AthenaClass | undefined) {
+    if (!classData) return false;
     const session = get(currentSession);
     if (!session) return false;
     if (!session.user.email) return false;
@@ -116,6 +117,7 @@ export async function updateClass(classData: AthenaClass) {
             description: classData.description,
             banner: classData.banner,
             subjects: classData.subjects,
+            creators: classData.creators,
         })
         .eq("uuid", classData.uuid)
 
@@ -167,6 +169,7 @@ export async function createClass(name: string, description: string) {
         users: [session.user.email],
         banner: await getRandomUnsplashImage(["landscape", "mountain"]),
         subjects: [],
+        creators: [session.user.email],
     }
 
     const {data, error} = await supabase
@@ -224,7 +227,6 @@ export async function loadTaskData() {
     }
 
     athenaTaskProgress.set(progressData);
-    console.log(taskData);
 }
 
 export async function getTask(taskUuid: string): Promise<AthenaTask | null> {

@@ -3,6 +3,8 @@
     import ClassPreview from "./ClassPreview.svelte";
     import type {ModalSettings} from "@skeletonlabs/skeleton";
     import {modalStore} from "@skeletonlabs/skeleton";
+    import {onMount} from "svelte";
+    import {goto} from "$app/navigation";
 
     function createNewClass() {
         const classNameModal: ModalSettings = {
@@ -19,6 +21,12 @@
 
         modalStore.trigger(classNameModal);
     }
+
+    onMount(() => {
+        if (!$currentSession) {
+            goto("/login")
+        }
+    })
 </script>
 
 <div class="p-5 w-full h-full">

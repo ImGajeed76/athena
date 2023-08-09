@@ -24,13 +24,13 @@
         loading = false;
     })
 
-    let saveEvent = null;
+    let saveEvent: (e: KeyboardEvent) => void;
     let startPathName = "";
 
     onMount(async () => {
         startPathName = window.location.pathname;
 
-        saveEvent = async (e) => {
+        saveEvent = async (e: KeyboardEvent) => {
             if (e.ctrlKey && e.key === "s") {
                 e.preventDefault();
                 if (window.location.pathname !== startPathName) {
@@ -103,12 +103,12 @@
             </div>
             {#if currentTab === 0}
                 <Task_Editor task={task}/>
+                <div class="w-full flex justify-around">
+                    <button class="btn variant-glass-success rounded" on:click={saveTaskWithAlert}>Save Task</button>
+                </div>
             {:else if currentTab === 1}
                 <Task_Viewer task={task}/>
             {/if}
-            <div class="w-full flex justify-around">
-                <button class="btn variant-glass-success rounded" on:click={saveTaskWithAlert}>Save Task</button>
-            </div>
         </div>
     {:else}
         <div class="w-full h-full grid items-center text-center">

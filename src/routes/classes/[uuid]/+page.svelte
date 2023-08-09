@@ -34,6 +34,7 @@
     let originalAthenaClass = "";
 
     let isAdmin = false;
+    let isCreator = false;
     let isEditing = false;
 
     let loading = true;
@@ -47,6 +48,7 @@
         const currentUserEmail = $currentSession?.user.email;
         if (currentUserEmail) {
             isAdmin = $athenaClass?.admins.includes(currentUserEmail) || false;
+            isCreator = $athenaClass?.creators.includes(currentUserEmail) || false;
         }
         loading = false;
     })
@@ -170,6 +172,48 @@
         }
     }
 
+    async function makeCreator(email: string) {
+        if (!isAdmin) return;
+        if (!$athenaClass) return;
+
+        if (email === $currentSession?.user.email) {
+            toastStore.trigger({
+                message: "You can't make yourself a creator!",
+                timeout: 2000,
+                background: "variant-filled-error"
+            })
+            return;
+        }
+
+        let updated = false;
+
+        if ($athenaClass.admins.includes(email)) {
+            $athenaClass.admins = $athenaClass.admins.filter(e => e !== email);
+            updated = true;
+        }
+
+        if (!$athenaClass.creators.includes(email)) {
+            $athenaClass.creators.push(email);
+            updated = true;
+        }
+
+        if (!updated) return;
+
+        if (await updateClass($athenaClass)) {
+            toastStore.trigger({
+                message: "User is now a creator!",
+                timeout: 2000,
+                background: "variant-filled-success"
+            })
+        } else {
+            toastStore.trigger({
+                message: "Failed to make user a creator!",
+                timeout: 2000,
+                background: "variant-filled-error"
+            })
+        }
+    }
+
     async function makeUser(email: string) {
         if (!isAdmin) return;
         if (!$athenaClass) return;
@@ -183,21 +227,32 @@
             return;
         }
 
+        let updated = false;
+
+        if ($athenaClass.creators.includes(email)) {
+            $athenaClass.creators = $athenaClass.creators.filter(e => e !== email);
+            updated = true;
+        }
+
         if ($athenaClass.admins.includes(email)) {
             $athenaClass.admins = $athenaClass.admins.filter(e => e !== email);
-            if (await updateClass($athenaClass)) {
-                toastStore.trigger({
-                    message: "Admin is now a user!",
-                    timeout: 2000,
-                    background: "variant-filled-success"
-                })
-            } else {
-                toastStore.trigger({
-                    message: "Failed to make user a user!",
-                    timeout: 2000,
-                    background: "variant-filled-error"
-                })
-            }
+            updated = true;
+        }
+
+        if (!updated) return;
+
+        if (await updateClass($athenaClass)) {
+            toastStore.trigger({
+                message: "Creator is now a user!",
+                timeout: 2000,
+                background: "variant-filled-success"
+            })
+        } else {
+            toastStore.trigger({
+                message: "Failed to make user a user!",
+                timeout: 2000,
+                background: "variant-filled-error"
+            })
         }
     }
 
@@ -545,14 +600,27 @@
                                                                 {#if $athenaClass.admins.includes(user)}
                                                                     <p class="">Admin</p>
                                                                     <button class="chip variant-glass hover:variant-glass-error"
-                                                                            on:click={() => {makeUser(user)}}>Make User
+                                                                            on:click={() => {makeCreator(user)}}>
+                                                                        Make Creator
                                                                     </button>
+                                                                {:else if $athenaClass.creators.includes(user)}
+                                                                    <p class="">Creator</p>
+                                                                    <div>
+                                                                        <button class="chip variant-glass hover:variant-glass-success"
+                                                                                on:click={() => {makeAdmin(user)}}>
+                                                                            Make Admin
+                                                                        </button>
+                                                                        <button class="chip variant-glass hover:variant-glass-error"
+                                                                                on:click={() => {makeUser(user)}}>
+                                                                            Make User
+                                                                        </button>
+                                                                    </div>
                                                                 {:else}
                                                                     <p class="">User</p>
                                                                     <div>
                                                                         <button class="chip variant-glass hover:variant-glass-success"
-                                                                                on:click={() => {makeAdmin(user)}}>Make
-                                                                            Admin
+                                                                                on:click={() => {makeCreator(user)}}>
+                                                                            Make Creator
                                                                         </button>
                                                                         <button class="chip variant-glass hover:variant-glass-error"
                                                                                 on:click={() => {removeUser(user)}}>
@@ -641,7 +709,7 @@
                                         {#each $taskDictValues as task_uuid}
                                             {#if $sortedTaskDict.includes(task_uuid)}
                                                 <TaskPreview athenaClass={athenaClass} taskUuid={task_uuid}
-                                                             isAdmin={isAdmin} isEditing={isEditing}
+                                                             isAdmin={isAdmin} isCreator={isCreator}
                                                              subject={encodeURIComponent($athenaClass.subjects[$currentTile - tilesBefore].name)}
                                                 />
                                             {/if}
@@ -649,7 +717,7 @@
                                     {:else}
                                         <p class="text-center">no tasks to display</p>
                                     {/if}
-                                    {#if isAdmin}
+                                    {#if isAdmin || isCreator}
                                         <hr class="mt-5">
                                         <div class="w-full flex justify-around mt-5">
                                             <button class="btn variant-filled-primary" on:click={addTask}>New Task
