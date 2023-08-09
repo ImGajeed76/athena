@@ -92,7 +92,7 @@
 <Modal/>
 
 {#if originalTask}
-    {#if isTaskAdmin && (isAdmin || isCreator)}
+    {#if (isTaskAdmin && (isAdmin || isCreator)) || isAdmin}
         <div class="w-full h-24 bg-surface-600 rounded shadow p-5 hover:shadow-2xl duration-200 mb-5"
              style="cursor: pointer">
             <div class="flex justify-between">
